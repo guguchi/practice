@@ -70,5 +70,4 @@ target/
 *.pyc
 *.png
 *.eps
-
-
+*.gz
