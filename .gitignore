@@ -71,3 +71,10 @@ target/
 *.png
 *.eps
 *.gz
+*.npy
+*.meta
+*.index
+*.ckpt*
+*checkpoint
+*.pyc
+*.gz
