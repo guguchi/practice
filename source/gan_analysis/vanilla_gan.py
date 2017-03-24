@@ -110,7 +110,6 @@ class VanillaGAN(object):
             os.makedirs(save_path)
 
         for it in range(step):
-            print 'step:{}'.format(it)
 
             X_mb = gaussian_mixture_circle(self.mb_size, num_cluster, scale, std)
 
@@ -149,7 +148,7 @@ class VanillaGAN(object):
             _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={
                               self.Z: self.sample_Z(self.mb_size, self.z_size)})
 
-            if it % 100 == 0 or it == args.step-1:
+            if it % 1000 == 0 or it == args.step-1:
                 self.saver.save(sess,
                                 args.save_path+'model.ckpt'.format(
                                 args.num_cluster, args.learning_rate_D,
