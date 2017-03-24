@@ -23,10 +23,11 @@ def main(_):
     d_depths = [50, 50, 50, 50]
     g_depths = [50, 50, 50, 50]
     mb_size = 128
+    species = 'vanilla_gan'
 
     with tf.Session() as sess:
 
-        if species = 'vanilla_gan':
+        if species == 'vanilla_gan':
             model = VanillaGAN(sess, x_size, args.z_size, z_range, d_depths, g_depths, mb_size)
             model.train(args)
 
