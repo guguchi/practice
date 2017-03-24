@@ -93,31 +93,72 @@ class VanillaGAN(object):
 
         self.saver = tf.train.Saver()
 
-    def train(self, step, learning_rate_D, learning_rate_G, num_cluster, scale, std):
+    def train_local(self, step, learning_rate_D, learning_rate_G,
+                    num_cluster, scale, std, save_path):
         self.build_model()
-        D_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.D_loss, var_list=self.theta_D)
-        G_solver = tf.train.AdamOptimizer(learning_rate_G).minimize(self.G_loss, var_list=self.theta_G)
+        D_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.D_loss,
+                                                          var_list=self.theta_D)
+        G_solver = tf.train.AdamOptimizer(learning_rate_G).minimize(self.G_loss,
+                                                          var_list=self.theta_G)
         D_loss_list = []
         G_loss_list = []
 
         sess = tf.Session()
         sess.run(tf.global_variables_initializer())
 
-        if not os.path.exists('../../data/gan_analysis/'):
-            os.makedirs('../../data/gan_analysis/')
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
         for it in range(step):
             print 'step:{}'.format(it)
 
             X_mb = gaussian_mixture_circle(self.mb_size, num_cluster, scale, std)
 
-            _, D_loss_curr = sess.run([D_solver, self.D_loss], feed_dict={self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
-            _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={self.Z: self.sample_Z(self.mb_size, self.z_size)})
+            _, D_loss_curr = sess.run([D_solver, self.D_loss], feed_dict={
+                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
+            _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={
+                              self.Z: self.sample_Z(self.mb_size, self.z_size)})
 
             if it % 10 == 0 or it == step-1:
-                self.saver.save(sess, '../../data/gan_analysis/model.ckpt', global_step=it)
+                self.saver.save(sess, save_path+'model.ckpt', global_step=it)
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
+
+    def train(self, args):
+        self.build_model()
+        D_solver = tf.train.AdamOptimizer(args.learning_rate_D).minimize(self.D_loss,
+                                                          var_list=self.theta_D)
+        G_solver = tf.train.AdamOptimizer(args.learning_rate_G).minimize(self.G_loss,
+                                                          var_list=self.theta_G)
+        D_loss_list = []
+        G_loss_list = []
+
+        sess = tf.Session()
+        sess.run(tf.global_variables_initializer())
+
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+
+        for it in range(args.step):
+
+            X_mb = gaussian_mixture_circle(self.mb_size, args.num_cluster,
+                                           args.scale, args.std)
+
+            _, D_loss_curr = sess.run([D_solver, self.D_loss], feed_dict={
+                self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
+            _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={
+                              self.Z: self.sample_Z(self.mb_size, self.z_size)})
+
+            if it % 10 == 0 or it == args.step-1:
+                self.saver.save(sess,
+                                args.save_path+'model.ckpt'.format(
+                                args.num_cluster, args.learning_rate_D,
+                                args.learning_rate_G), global_step=it)
+            D_loss_list.append(D_loss_curr)
+            G_loss_list.append(G_loss_curr)
+
+        np.save(args.save_path+'d_loss_list.npy', D_loss_list)
+        np.save(args.save_path+'g_loss_list.npy', G_loss_list)
 
 
     def restore(self):
@@ -128,39 +169,8 @@ class VanillaGAN(object):
         ckpt = tf.train.get_checkpoint_state('../../data/gan_analysis/')
         if ckpt:
             last_model = ckpt.model_checkpoint_path
-            print "load " + last_model
             saver.restore(self.sess, '../../data/gan_analysis/model.ckpt-29')
-
-            print self.sess.run(self.G_W1)
-            print self.sess.run(self.D_W1)
 
         else:
             init = tf.initialize_all_variables()
             self.sess.run(init)
-
-
-    """
-    def train(self, args):
-        D_solver = tf.train.AdamOptimizer(args.learning_rate_D).minimize(self.D_loss, var_list=self.theta_D)
-        G_solver = tf.train.AdamOptimizer(args.learning_rate_G).minimize(self.G_loss, var_list=self.theta_G)
-        D_loss_list = []
-        G_loss_list = []
-
-        sess = tf.Session()
-        sess.run(tf.global_variables_initializer())
-
-        if not os.path.exists('../../data/gan_analysis/'):
-            os.makedirs('../../data/gan_analysis/')
-
-        for it in range(args.step):
-            print 'step:{}'.format(it)
-
-            X_mb = gaussian_mixture_circle(self.mb_size, args.num_cluster, args.scale, args.std)
-
-            _, D_loss_curr = sess.run([D_solver, self.D_loss], feed_dict={X: X_mb, Z: self.sample_Z(self.mb_size, z_size, z_range)})
-            _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={Z: self.sample_Z(self.mb_size, z_size, z_range)})
-
-            saver.save(sess, '../../data/gan_analysis/model.ckpt', global_step=10)
-            D_loss_list.append(D_loss_curr)
-            G_loss_list.append(G_loss_curr)
-    """
