@@ -5,7 +5,7 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
-step = 1000000
+step = 1000001
 learning_rate_D_list = [0.001, 0.00075, 0.0005, 0.00025, 0.0001]
 learning_rate_G_list = [0.001, 0.00075, 0.0005, 0.00025, 0.0001]
 num_cluster_list = [8, 4, 2, 1]
@@ -29,4 +29,5 @@ for learning_rate_D in learning_rate_D_list:
 
             	    res, success=slurm_tools.slurm_submit(SLURM_commands, mem=16000, gres='gpu:1')
 
-                    print "job number: "+res
+                    print success
+                    print res
