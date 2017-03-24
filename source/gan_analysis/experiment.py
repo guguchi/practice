@@ -17,4 +17,4 @@ for learning_rate_D in learning_rate_D_list:
     for learning_rate_G in learning_rate_G_list:
         for num_cluster in num_cluster_list:
             for std in std_list:
-                
+                save_path = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'
