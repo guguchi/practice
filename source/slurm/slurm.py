@@ -1,7 +1,7 @@
 import subprocess
 import math
 import sys
-import argparse 
+import argparse
 import json
 import time
 import datetime
@@ -13,7 +13,7 @@ class slurm_tools:
 	def bash_run(command):
 		proc = subprocess.Popen(['/bin/bash'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		return proc.communicate(command) , (proc.returncode == 0)
-	      
+
 	@staticmethod
 	def slurm_submit(commands,**kwargs):
 		params={};
@@ -34,7 +34,7 @@ class slurm_tools:
 		if not "error" in params:
 		    params['error']=params['output'];
 
-		
+
 
 		batch='printf "';
 		batch=batch+'#!/bin/bash \\n';
@@ -42,7 +42,7 @@ class slurm_tools:
 		if 'name' in params:
 		  params['name']=params['name'].replace(' ','-');
 		  batch=batch+'#SBATCH --job-name=\"'+format(params['name'])+'\"\\n';
-		
+
 		batch=batch+'#SBATCH -c '+format(params['cores'])+'\\n';
 		batch=batch+'#SBATCH --mem '+format(params['mem'])+'\\n';
 		batch=batch+'#SBATCH -t '+format(params['time'])+'\\n';
@@ -75,8 +75,8 @@ class slurm_tools:
 				command.replace('"','\"');
 				batch=batch+command+';';
 				res, success=slurm_tools.bash_run(batch);
-				res="0";				
-	
+				res="0";
+
 		else:
 			print "#I: BATCH SCRIPT: ---------------------------------"
 			print batch
@@ -84,7 +84,6 @@ class slurm_tools:
 			res, success=slurm_tools.bash_run(batch);
 			if success:
 				res=res[0].split()[-1];
-	
+
 
 		return res, success;
-

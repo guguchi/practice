@@ -8,10 +8,10 @@ from slurm import slurm_tools
 step = 1000001
 learning_rate_D_list = [0.001, 0.00075, 0.0005, 0.00025, 0.0001]
 learning_rate_G_list = [0.001, 0.00075, 0.0005, 0.00025, 0.0001]
-num_cluster_list = [8, 4, 2, 1]
+num_cluster_list = [8]#[8, 4, 2, 1]
 scale = 2
-std_list = [0.5, 0.4, 0.3, 0.2, 0.1]
-z_size_list = [500, 100, 50, 10, 2, 1]
+std_list = [0.2]#[0.5, 0.4, 0.3, 0.2, 0.1]
+z_size_list = [50, 10]#[500, 100, 50, 10, 2, 1]
 save_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/20170324/'
 
 for learning_rate_D in learning_rate_D_list:

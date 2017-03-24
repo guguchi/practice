@@ -159,7 +159,6 @@ class VanillaGAN(object):
         np.save(args.save_path+'d_loss_list.npy', D_loss_list)
         np.save(args.save_path+'g_loss_list.npy', G_loss_list)
 
-
     def restore(self):
         self.build_model()
 
