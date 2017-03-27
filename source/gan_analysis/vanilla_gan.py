@@ -104,7 +104,7 @@ class VanillaGAN(object):
         D_loss_list = []
         G_loss_list = []
 
-        sess = tf.Session()
+        sess = tf.Session(max_to_keep=2500)
         sess.run(tf.global_variables_initializer())
 
         if not os.path.exists(save_path):
