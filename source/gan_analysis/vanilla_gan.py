@@ -3,6 +3,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import time
 from gmm_sampler import *
 
 
@@ -124,6 +125,7 @@ class VanillaGAN(object):
             G_loss_list.append(G_loss_curr)
 
     def train(self, args):
+        time_start = time.time()
         self.build_model()
         D_solver = tf.train.AdamOptimizer(args.learning_rate_D).minimize(self.D_loss,
                                                           var_list=self.theta_D)
@@ -158,6 +160,9 @@ class VanillaGAN(object):
 
         np.save(args.save_path+'d_loss_list.npy', D_loss_list)
         np.save(args.save_path+'g_loss_list.npy', G_loss_list)
+        elapsed_time = time.time()-time_start
+        print ("birth:{}".format(elapsed_time)) + "[sec]"
+        print '---'
 
     def restore(self):
         self.build_model()

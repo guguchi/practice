@@ -12,7 +12,8 @@ num_cluster_list = [8]#[8, 4, 2, 1]
 scale = 2
 std_list = [0.2]#[0.5, 0.4, 0.3, 0.2, 0.1]
 z_size_list = [50]#[500, 100, 50, 10, 2, 1]#, 10
-save_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/20170324/'
+date = '20170327'
+save_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+'/'
 
 for learning_rate_D in learning_rate_D_list:
     for learning_rate_G in learning_rate_G_list:
