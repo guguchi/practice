@@ -92,7 +92,7 @@ class VanillaGAN(object):
         self.D_loss = -tf.reduce_mean(tf.log(self.D_real) + tf.log(1.0 - self.D_fake))
         self.G_loss = -tf.reduce_mean(tf.log(self.D_fake))
 
-        self.saver = tf.train.Saver(max_to_kepp=2500)
+        self.saver = tf.train.Saver(max_to_keep=2500)
 
     def train_local(self, step, learning_rate_D, learning_rate_G,
                     num_cluster, scale, std, save_path):
