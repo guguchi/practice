@@ -78,3 +78,6 @@ target/
 *checkpoint
 *.pyc
 *.gz
+*DS_Store
+DS_Store*
+*.DS_Store*
