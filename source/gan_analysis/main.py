@@ -20,8 +20,8 @@ def main(_):
 
     x_size = 2
     z_range = 1.0
-    d_depths = [50, 30, 20, 10]
-    g_depths = [50, 30, 20, 10]
+    d_depths = [25, 30, 30, 25]
+    g_depths = [25, 20, 20, 10]
     mb_size = 128
     species = 'vanilla_gan'
 
