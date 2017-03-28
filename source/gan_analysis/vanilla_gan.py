@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 import time
 from gmm_sampler import *
@@ -164,16 +165,56 @@ class VanillaGAN(object):
         print ("birth:{}".format(elapsed_time)) + "[sec]"
         print '---'
 
-    def restore(self):
-        self.build_model()
 
-        saver = tf.train.Saver()
+    def sample_generator(self):
+        self.Z = tf.placeholder(tf.float32, shape=[None, self.z_size])
 
-        ckpt = tf.train.get_checkpoint_state('../../data/gan_analysis/')
+        self.G_W1 = tf.Variable(self.xavier_init([self.z_size, self.g_depths[0]]), name='G_W1')
+        self.G_b1 = tf.Variable(tf.zeros(shape=[self.g_depths[0]]), name='G_b1')
+
+        self.G_W2 = tf.Variable(self.xavier_init([self.g_depths[0], self.g_depths[1]]), name='G_W2')
+        self.G_b2 = tf.Variable(tf.zeros(shape=[self.g_depths[1]]), name='G_b2')
+
+        self.G_W3 = tf.Variable(self.xavier_init([self.g_depths[1], self.g_depths[2]]), name='G_W3')
+        self.G_b3 = tf.Variable(tf.zeros(shape=[self.g_depths[2]]), name='G_b3')
+
+        self.G_W4 = tf.Variable(self.xavier_init([self.g_depths[2], self.g_depths[3]]), name='G_W4')
+        self.G_b4 = tf.Variable(tf.zeros(shape=[self.g_depths[3]]), name='G_b4')
+
+        self.G_W5 = tf.Variable(self.xavier_init([self.g_depths[3], self.x_size]), name='G_W5')
+        self.G_b5 = tf.Variable(tf.zeros(shape=[self.x_size]), name='G_b5')
+
+        self.theta_G = [self.G_W5, self.G_W4, self.G_W3, self.G_W2, self.G_W1,
+                        self.G_b5, self.G_b4, self.G_b3, self.G_b2, self.G_b1]
+
+        G_sample = self.generator(self.Z, self.theta_G)
+
+        self.saver = tf.train.Saver()
+
+        return G_sample
+
+
+    def restore_local(self, path, step, sample_size, num_cluster, scale, std):
+        G_sample = self.sample_generator()
+
+        ckpt = tf.train.get_checkpoint_state('../../data/gan_analysis/'+path)
         if ckpt:
-            last_model = ckpt.model_checkpoint_path
-            saver.restore(self.sess, '../../data/gan_analysis/model.ckpt-29')
+            self.saver.restore(self.sess, '../../data/gan_analysis/'+path+'model.ckpt-{}'.format(step))
+            sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(sample_size, self.z_size)})
+
+            X_mb = gaussian_mixture_circle(sample_size, num_cluster, scale, std)
+
+
+            plt.plot(sample[0].T[0], sample[0].T[1], 'o')
+            plt.plot(X_mb.T[0], X_mb.T[1], 'o')
+            plt.show()
+
+            d_loss_list = np.load('../../data/gan_analysis/'+path+'d_loss_list.npy')
+            g_loss_list = np.load('../../data/gan_analysis/'+path+'g_loss_list.npy')
+            plt.plot(np.arange(len(d_loss_list)), d_loss_list, label='D')
+            plt.plot(np.arange(len(g_loss_list)), g_loss_list, label='G')
+            plt.legend()
+            plt.show()
 
         else:
-            init = tf.initialize_all_variables()
-            self.sess.run(init)
+            print 'nothing model.ckpt'
