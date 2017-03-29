@@ -2,6 +2,8 @@
 
 import tensorflow as tf
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import time
@@ -126,7 +128,6 @@ class VanillaGAN(object):
             G_loss_list.append(G_loss_curr)
 
     def train(self, args):
-        time_start = time.time()
         self.build_model()
         D_solver = tf.train.AdamOptimizer(args.learning_rate_D).minimize(self.D_loss,
                                                           var_list=self.theta_D)
@@ -135,35 +136,52 @@ class VanillaGAN(object):
         D_loss_list = []
         G_loss_list = []
 
-        sess = tf.Session()
-        sess.run(tf.global_variables_initializer())
+        self.sess.run(tf.global_variables_initializer())
 
-        if not os.path.exists(args.save_path):
-            os.makedirs(args.save_path)
+        if not os.path.exists(args.save_data_path):
+            os.makedirs(args.save_data_path)
+
+        if not os.path.exists(args.save_fig_path):
+            os.makedirs(args.save_fig_path)
 
         for it in range(args.step):
 
             X_mb = gaussian_mixture_circle(self.mb_size, args.num_cluster,
                                            args.scale, args.std)
 
-            _, D_loss_curr = sess.run([D_solver, self.D_loss], feed_dict={
+            _, D_loss_curr = self.sess.run([D_solver, self.D_loss], feed_dict={
                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
-            _, G_loss_curr = sess.run([G_solver, self.G_loss], feed_dict={
+            _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
                               self.Z: self.sample_Z(self.mb_size, self.z_size)})
 
             if it % 1000 == 0 or it == args.step-1:
-                self.saver.save(sess,
-                                args.save_path+'model.ckpt'.format(
+                self.saver.save(self.sess,
+                                args.save_data_path+'model.ckpt'.format(
                                 args.num_cluster, args.learning_rate_D,
                                 args.learning_rate_G), global_step=it)
+
+                sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(args.sample_size, self.z_size)})
+
+                X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
+
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+                plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
+                plt.legend()
+                plt.savefig(args.save_fig_path+'step_{}.png'.format(it))
+                plt.close()
+
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
 
-        np.save(args.save_path+'d_loss_list.npy', D_loss_list)
-        np.save(args.save_path+'g_loss_list.npy', G_loss_list)
+        plt.plot(np.arange(D_loss_curr), D_loss_curr, label='D')
+        plt.plot(np.arange(G_loss_curr), G_loss_curr, label='G')
+        plt.legend()
+        plt.savefig(args.save_fig_path+'loss.png')
+        plt.close()
+
+        np.save(args.save_data_path+'d_loss_list.npy', D_loss_list)
+        np.save(args.save_data_path+'g_loss_list.npy', G_loss_list)
         elapsed_time = time.time()-time_start
-        print ("birth:{}".format(elapsed_time)) + "[sec]"
-        print '---'
 
 
     def sample_generator(self):
@@ -212,21 +230,23 @@ class VanillaGAN(object):
         else:
             print 'nothing model.ckpt'
 
-    def restore_maui(self, path, step, sample_size, num_cluster, scale, std):
-
+    def restore(self, args):
         G_sample = self.sample_generator()
 
-        ckpt = tf.train.get_checkpoint_state(path)
-        if ckpt:
-            self.saver.restore(self.sess, path+'model.ckpt-{}'.format(step))
-            sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(sample_size, self.z_size)})
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
 
-            X_mb = gaussian_mixture_circle(sample_size, num_cluster, scale, std)
+        ckpt = tf.train.get_checkpoint_state(args.data_path)
+        if ckpt:
+            self.saver.restore(self.sess, args.data_path+'model.ckpt-{}'.format(args.step))
+            sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(args.sample_size, self.z_size)})
+
+            X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
 
             plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
             plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
             plt.legend()
-            plt.savefig(path+'gmm_{}.png'.format(step))
+            plt.savefig(args.save_path+'gmm_{}.png'.format(args.step))
             plt.close()
 
         else:

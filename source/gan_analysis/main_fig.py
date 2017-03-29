@@ -1,12 +1,14 @@
 import argparse
 import os
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from vanilla_gan import *
 import tensorflow as tf
 
 parser = argparse.ArgumentParser()
-parser.add_argument('save_data_path', type=str)
-parser.add_argument('save_fig_path', type=str)
+parser.add_argument('save_path', type=str)
+parser.add_argument('data_path', type=str)
 parser.add_argument('step', type=int)
 parser.add_argument('learning_rate_D', type=float)
 parser.add_argument('learning_rate_G', type=float)
@@ -25,13 +27,14 @@ def main(_):
     d_depths = [25, 30, 30, 25]
     g_depths = [25, 20, 20, 10]
     mb_size = 128
-    species = 'vanilla_gan'
+    species = 'test'
 
     with tf.Session() as sess:
 
-        if species == 'vanilla_gan':
+        if species == 'test':
             model = VanillaGAN(sess, x_size, args.z_size, z_range, d_depths, g_depths, mb_size)
-            model.train(args)
+            model.restore(args)
+
 
 
 if __name__ == '__main__':
