@@ -160,7 +160,7 @@ class VanillaGAN(object):
                                 args.num_cluster, args.learning_rate_D,
                                 args.learning_rate_G), global_step=it)
 
-                sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(args.sample_size, self.z_size)})
+                sample = self.sess.run([self.G_sample], feed_dict={self.Z: self.sample_Z(args.sample_size, self.z_size)})
 
                 X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
 

@@ -5,7 +5,7 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
-step = 2000
+step = 5000
 learning_rate_D_list = [0.0001]#[0.0001, 0.00005, 0.00001]
 learning_rate_G_list = [0.0001]#[0.0001, 0.00005, 0.00001]
 num_cluster_list = [8]#[8, 4, 2, 1]
