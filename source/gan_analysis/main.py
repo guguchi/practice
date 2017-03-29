@@ -21,7 +21,7 @@ args = parser.parse_args()
 def main(_):
 
     x_size = 2
-    z_range = 1.0
+    z_range = 2.0
     d_depths = [25, 30, 30, 25]
     g_depths = [25, 20, 20, 10]
     mb_size = 128
