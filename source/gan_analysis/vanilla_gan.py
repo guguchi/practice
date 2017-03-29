@@ -204,17 +204,30 @@ class VanillaGAN(object):
 
             X_mb = gaussian_mixture_circle(sample_size, num_cluster, scale, std)
 
-
-            plt.plot(sample[0].T[0], sample[0].T[1], 'o')
-            plt.plot(X_mb.T[0], X_mb.T[1], 'o')
-            plt.show()
-
-            d_loss_list = np.load('../../data/gan_analysis/'+path+'d_loss_list.npy')
-            g_loss_list = np.load('../../data/gan_analysis/'+path+'g_loss_list.npy')
-            plt.plot(np.arange(len(d_loss_list)), d_loss_list, label='D')
-            plt.plot(np.arange(len(g_loss_list)), g_loss_list, label='G')
+            plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+            plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
             plt.legend()
             plt.show()
+
+        else:
+            print 'nothing model.ckpt'
+
+    def restore_maui(self, path, step, sample_size, num_cluster, scale, std):
+
+        G_sample = self.sample_generator()
+
+        ckpt = tf.train.get_checkpoint_state(path)
+        if ckpt:
+            self.saver.restore(self.sess, path+'model.ckpt-{}'.format(step))
+            sample = self.sess.run([G_sample], feed_dict={self.Z: self.sample_Z(sample_size, self.z_size)})
+
+            X_mb = gaussian_mixture_circle(sample_size, num_cluster, scale, std)
+
+            plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+            plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
+            plt.legend()
+            plt.savefig(path+'gmm_{}.png'.format(step))
+            plt.close()
 
         else:
             print 'nothing model.ckpt'
