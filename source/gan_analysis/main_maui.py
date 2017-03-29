@@ -1,4 +1,7 @@
 import os
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from vanilla_gan import *
 import tensorflow as tf
 
@@ -16,6 +19,7 @@ def main(_):
     learning_rate_D_list = [0.0001, 0.00005, 0.00001]
     learning_rate_G_list = [0.0001, 0.00005, 0.00001]
     num_cluster = 8
+    scale = 2
     std = 0.2
     z_size_list = [100, 50, 10, 2, 1]
     species = 'z_zize'
@@ -69,9 +73,6 @@ def main(_):
                     model.restore_maui(root+path, step, sample_size, num_cluster, scale, std)
 
                     sess.close()
-
-
-
 
 
 if __name__ == '__main__':
