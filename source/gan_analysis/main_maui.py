@@ -10,7 +10,7 @@ def main(_):
     d_depths = [25, 30, 30, 25]
     g_depths = [25, 20, 20, 10]
     mb_size = 128
-    root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'
+    root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis'
 
     #z_size
     learning_rate_D_list = [0.0001, 0.00005, 0.00001]
