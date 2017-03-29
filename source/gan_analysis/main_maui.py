@@ -18,7 +18,7 @@ def main(_):
     num_cluster = 8
     std = 0.2
     z_size_list = [100, 50, 10, 2, 1]
-    species = 'z_size'
+    species = 'z_zize'
 
     sample_size = 100000
 
