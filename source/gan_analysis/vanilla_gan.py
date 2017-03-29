@@ -173,8 +173,8 @@ class VanillaGAN(object):
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
 
-        plt.plot(np.arange(D_loss_curr), D_loss_curr, label='D')
-        plt.plot(np.arange(G_loss_curr), G_loss_curr, label='G')
+        plt.plot(np.arange(len(D_loss_curr)), D_loss_curr, label='D')
+        plt.plot(np.arange(len(G_loss_curr)), G_loss_curr, label='G')
         plt.legend()
         plt.savefig(args.save_fig_path+'loss.png')
         plt.close()
