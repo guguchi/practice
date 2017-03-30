@@ -25,7 +25,7 @@ def main(_):
     z_range = 2.0
     d_depths = [10, 10, 10, 10]
     g_depths = [10, 10, 10, 10]
-    mb_size = 128
+    mb_size = 200
     clip_value = 0.01
 
     with tf.Session() as sess:

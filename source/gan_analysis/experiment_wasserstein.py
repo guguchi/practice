@@ -5,14 +5,14 @@ import sys,os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
-g_iteration = 1000#500000
-d_iteration = 10
-learning_rate_D_list = [0.00005]#, 0.00004, 0.00003, 0.00002, 0.00001]
-learning_rate_G_list = [0.00005]#, 0.00004, 0.00003, 0.00002, 0.00001]
+g_iteration = 500000
+d_iteration = 1000
+learning_rate_D_list = [0.00005, 0.00004, 0.00003, 0.00002, 0.00001]
+learning_rate_G_list = [0.00005, 0.00004, 0.00003, 0.00002, 0.00001]
 num_cluster_list = [8]
 scale = 2
 std = 0.2
-z_size_list = [100]#, 50, 20, 10, 2, 1]
+z_size_list = [100, 50, 20, 10, 2, 1]
 date = '20170331/'
 species = 'wasserstein_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'file/'
