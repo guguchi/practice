@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from vanilla_gan import *
+from wasserstein_gan import *
 import tensorflow as tf
 
 parser = argparse.ArgumentParser()
