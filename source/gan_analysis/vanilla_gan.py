@@ -46,8 +46,7 @@ class VanillaGAN(object):
         G_h3 = tf.nn.relu(tf.matmul(G_h2, G_W3) + G_b3)
         G_h4 = tf.nn.relu(tf.matmul(G_h3, G_W4) + G_b4)
         G_log_prob = tf.matmul(G_h4, G_W5) + G_b5
-        G_prob = tf.nn.sigmoid(G_log_prob)
-        return G_prob
+        return G_log_prob
 
     def build_model(self):
         self.X = tf.placeholder(tf.float32, shape=[None, self.x_size])

@@ -22,16 +22,16 @@ def main(_):
 
     x_size = 2
     z_range = 2.0
-    d_depths = [25, 30, 30, 25]
-    g_depths = [25, 20, 20, 10]
+    d_depths = [10, 10, 10, 10]
+    g_depths = [10, 10, 10, 10]
     mb_size = 128
-    species = 'vanilla_gan'
+    clip_value = 0.01
 
     with tf.Session() as sess:
 
-        if species == 'vanilla_gan':
-            model = VanillaGAN(sess, x_size, args.z_size, z_range, d_depths, g_depths, mb_size)
-            model.train(args)
+        model = VanillaGAN(sess, x_size, args.z_size, z_range, d_depths,
+                               g_depths, mb_size)
+        model.train(args)
 
 
 if __name__ == '__main__':
