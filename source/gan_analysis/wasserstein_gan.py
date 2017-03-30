@@ -183,6 +183,9 @@ class WassersteinGAN(object):
                    feed_dict={self.Z: self.sample_Z(self.mb_size, self.z_size)}
             )
 
+            D_loss_list.append(D_loss_curr)
+            G_loss_list.append(G_loss_curr)
+
             if g_iter % 1000 == 0 or g_iter == args.g_iteration-1:
                 self.saver.save(self.sess, args.save_data_path+'model.ckpt', global_step=g_iter)
 
@@ -198,12 +201,10 @@ class WassersteinGAN(object):
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
                 plt.close()
 
-            D_loss_list.append(D_loss_curr)
-            G_loss_list.append(G_loss_curr)
-            plt.plot(np.arange(args.g_iteration), D_loss_list, label='D_loss')
-            plt.plot(np.arange(args.g_iteration), G_loss_list, label='G_loss')
-            plt.legend()
-            plt.savefig(args.save_fig_path+'loss.png')
-            plt.close()
-            np.savetxt(args.save_data_path+'d_loss.out', D_loss_list)
-            np.savetxt(args.save_data_path+'g_loss.out', G_loss_list)
+        plt.plot(np.arange(len(D_loss_list)), D_loss_list, label='D_loss')
+        plt.plot(np.arange(len(D_loss_list)), G_loss_list, label='G_loss')
+        plt.legend()
+        plt.savefig(args.save_fig_path+'loss.png')
+        plt.close()
+        np.savetxt(args.save_data_path+'d_loss.out', D_loss_list)
+        np.savetxt(args.save_data_path+'g_loss.out', G_loss_list)
