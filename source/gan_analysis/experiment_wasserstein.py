@@ -39,5 +39,3 @@ for learning_rate_D in learning_rate_D_list:
 
                 print success
                 print res
-
-                    print res
