@@ -16,7 +16,7 @@ date = '20170401/'
 species = 'vanilla_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'file/'
 save_fig_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'fig/'
-sample_size = 50000
+sample_size = 25000
 
 for learning_rate_D in learning_rate_D_list:
     for learning_rate_G in learning_rate_G_list:
