@@ -37,7 +37,7 @@ for learning_rate_D in learning_rate_D_list:
                                 learning_rate_D, learning_rate_G,
                                 num_cluster, scale, std, z_size, clip_value, sample_size)]
 
-                    res, success=slurm_tools.slurm_submit(SLURM_commands, mem=16000, gres='gpu:1')
+                    res, success=slurm_tools.slurm_submit(SLURM_commands, mem=4000, gres='gpu:1')
 
                     print success
                     print res
