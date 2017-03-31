@@ -22,15 +22,14 @@ def main(_):
 
     x_size = 2
     z_range = 2.0
-    d_depths = [10, 10, 10, 10]
-    g_depths = [10, 10, 10, 10]
-    mb_size = 128
-    clip_value = 0.01
+    d_depths = [x_size, 64, 64*2, 64*3, 64*4, 1]
+    g_depths = [args.z_size, 64*4, 64*2*3, 64*2, 64, x_size]
+    mb_size = 200
 
     with tf.Session() as sess:
 
         model = VanillaGAN(sess, x_size, args.z_size, z_range, d_depths,
-                               g_depths, mb_size)
+                           g_depths, mb_size)
         model.train(args)
 
 

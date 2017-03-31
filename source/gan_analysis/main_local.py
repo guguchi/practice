@@ -8,15 +8,15 @@ def main(_):
 
     x_size = 2
     z_size = 25
-    z_range = 1.0
-    d_depths = [5, 5, 5, 5]
-    g_depths = [5, 5, 5, 5]
+    z_range = 10.0
+    d_depths = [x_size, 50, 50, 50, 50, 1]
+    g_depths = [z_size, 50, 50, 50, 50, x_size]
     mb_size = 128
     phase = 'train'#'test'#
-    species = 'wesserstein_gan'
+    species =  'vanilla_gan'#'wesserstein_gan'#
 
-    learning_rate_D = 0.000025
-    learning_rate_G = 0.000025
+    learning_rate_D = 0.00001
+    learning_rate_G = 0.00001
     num_cluster = 8
     scale = 2
     std = 0.2
@@ -31,10 +31,7 @@ def main(_):
             if phase == 'train':
                 model = VanillaGAN(sess, x_size, z_size, z_range, d_depths, g_depths, mb_size)
                 model.train_local(step, learning_rate_D, learning_rate_G, num_cluster,
-                            scale, std)
-            else:
-                model = VanillaGAN(sess, x_size, z_size, z_range, d_depths, g_depths, mb_size)
-                model.restore_local(save_path, step, sample_size, num_cluster = 8, scale = 2, std = 0.2)
+                                  scale, std, save_path)
 
         if species == 'wesserstein_gan':
             if phase == 'train':

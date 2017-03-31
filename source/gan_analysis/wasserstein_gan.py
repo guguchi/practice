@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
-import time
 from gmm_sampler import *
 
 
@@ -23,76 +22,102 @@ class WassersteinGAN(object):
         self.mb_size = mb_size
         self.clip_value = clip_value
 
-    def xavier_init(self, size):
-        in_dim = size[0]
+    def xavier_init(self, in_dim):
         xavier_stddev = 1. / tf.sqrt(in_dim / 2.)
-        return tf.random_normal(shape=size, stddev=xavier_stddev)
+        return xavier_stddev
+
+    def get_weights(self, name, size, stddev):
+        var = tf.get_variable(
+            name = name,
+            shape = size,
+            initializer = tf.truncated_normal_initializer(stddev = stddev))
+        return var
+
+    def get_biases(self, name, size, value):
+        var = tf.get_variable(
+            name = name,
+            shape = size,
+            initializer = tf.constant_initializer(value = value))
+        return var
 
     def sample_Z(self, m, n):
         return np.random.uniform(-self.z_range, self.z_range, size=[m, n])
 
-    def discriminator(self, x, theta_D):
-        [D_W5, D_W4, D_W3, D_W2, D_W1, D_b5, D_b4, D_b3, D_b2, D_b1] = theta_D
-        D_h1 = tf.nn.relu(tf.matmul(x, D_W1) + D_b1)
-        D_h2 = tf.nn.relu(tf.matmul(D_h1, D_W2) + D_b2)
-        D_h3 = tf.nn.relu(tf.matmul(D_h2, D_W3) + D_b3)
-        D_h4 = tf.nn.relu(tf.matmul(D_h3, D_W4) + D_b4)
-        D_logit = tf.matmul(D_h4, D_W5) + D_b5
-        return D_logit
+    def discriminator(self, x, scope_reuse):
+        N = len(self.d_depths)
+        with tf.variable_scope("discriminator") as scope:
+            if scope_reuse:
+                scope.reuse_variables()
+            h = x
+            for index in range(N - 2):
+                W = self.get_weights(
+                        name = 'D_W{}'.format(index+1),
+                        size = [self.d_depths[index], self.d_depths[index+1]],
+                        stddev = self.clip_value / 2.
+                )
+                b = self.get_biases(
+                        name = 'D_b{}'.format(index+1),
+                        size = [self.d_depths[index+1]],
+                        value = 0.0
+                )
+                h = tf.nn.relu(tf.matmul(h, W) + b)
 
-    def generator(self, z, theta_G):
-        [G_W5, G_W4, G_W3, G_W2, G_W1, G_b5, G_b4, G_b3, G_b2, G_b1] = theta_G
-        G_h1 = tf.nn.relu(tf.matmul(z, G_W1) + G_b1)
-        G_h2 = tf.nn.relu(tf.matmul(G_h1, G_W2) + G_b2)
-        G_h3 = tf.nn.relu(tf.matmul(G_h2, G_W3) + G_b3)
-        G_h4 = tf.nn.relu(tf.matmul(G_h3, G_W4) + G_b4)
-        G_log_prob = tf.matmul(G_h4, G_W5) + G_b5
-        return G_log_prob
+            W = self.get_weights(
+                    name = 'D_W{}'.format(N-1),
+                    size = [self.d_depths[N-2], self.d_depths[N-1]],
+                    stddev = self.clip_value / 2.
+            )
+            b = self.get_biases(
+                    name = 'D_b{}'.format(N-1),
+                    size = [self.d_depths[N-1]],
+                    value = 0.0
+            )
+            out = tf.matmul(h, W) + b
+        return out
+
+    def generator(self, z):
+        N = len(self.g_depths)
+        with tf.variable_scope("generator") as scope:
+            h = z
+            for index in range(N - 2):
+                W = self.get_weights(
+                        name = 'G_W{}'.format(index+1),
+                        size = [self.g_depths[index], self.g_depths[index+1]],
+                        stddev = self.xavier_init(self.g_depths[index])
+                )
+                b = self.get_biases(
+                        name = 'G_b{}'.format(index+1),
+                        size = [self.g_depths[index+1]],
+                        value = 0.0
+                )
+                h = tf.nn.relu(tf.matmul(h, W) + b)
+
+            W = self.get_weights(
+                    name = 'G_W{}'.format(N-1),
+                    size = [self.g_depths[N-2], self.g_depths[N-1]],
+                    stddev = self.xavier_init(self.g_depths[N-2])
+            )
+            b = self.get_biases(
+                    name = 'G_b{}'.format(N-1),
+                    size = [self.g_depths[N-1]],
+                    value = 0.0
+            )
+            out = tf.matmul(h, W) + b
+        return out
 
     def build_model(self):
         self.X = tf.placeholder(tf.float32, shape=[None, self.x_size])
         self.Z = tf.placeholder(tf.float32, shape=[None, self.z_size])
 
-        self.D_W1 = tf.Variable(self.xavier_init([self.x_size, self.d_depths[0]]), name='D_W1')
-        self.D_b1 = tf.Variable(tf.zeros(shape=[self.d_depths[0]]), name='D_b1')
+        self.G_sample = self.generator(self.Z)
+        self.D_real = self.discriminator(self.X, scope_reuse = False)
+        self.D_fake = self.discriminator(self.G_sample, scope_reuse = True)
 
-        self.D_W2 = tf.Variable(self.xavier_init([self.d_depths[0], self.d_depths[1]]), name='D_W2')
-        self.D_b2 = tf.Variable(tf.zeros(shape=[self.d_depths[1]]), name='D_b2')
+        train_variables = tf.trainable_variables()
+        self.theta_G = [v for v in train_variables if v.name.startswith("generator")]
+        self.theta_D = [v for v in train_variables if v.name.startswith("discriminator")]
 
-        self.D_W3 = tf.Variable(self.xavier_init([self.d_depths[1], self.d_depths[2]]), name='D_W3')
-        self.D_b3 = tf.Variable(tf.zeros(shape=[self.d_depths[2]]), name='D_b3')
-
-        self.D_W4 = tf.Variable(self.xavier_init([self.d_depths[2], self.d_depths[3]]), name='D_W4')
-        self.D_b4 = tf.Variable(tf.zeros(shape=[self.d_depths[3]]), name='D_b4')
-
-        self.D_W5 = tf.Variable(self.xavier_init([self.d_depths[3], 1]), name='D_W5')
-        self.D_b5 = tf.Variable(tf.zeros(shape=[1]), name='D_b5')
-
-        self.G_W1 = tf.Variable(self.xavier_init([self.z_size, self.g_depths[0]]), name='G_W1')
-        self.G_b1 = tf.Variable(tf.zeros(shape=[self.g_depths[0]]), name='G_b1')
-
-        self.G_W2 = tf.Variable(self.xavier_init([self.g_depths[0], self.g_depths[1]]), name='G_W2')
-        self.G_b2 = tf.Variable(tf.zeros(shape=[self.g_depths[1]]), name='G_b2')
-
-        self.G_W3 = tf.Variable(self.xavier_init([self.g_depths[1], self.g_depths[2]]), name='G_W3')
-        self.G_b3 = tf.Variable(tf.zeros(shape=[self.g_depths[2]]), name='G_b3')
-
-        self.G_W4 = tf.Variable(self.xavier_init([self.g_depths[2], self.g_depths[3]]), name='G_W4')
-        self.G_b4 = tf.Variable(tf.zeros(shape=[self.g_depths[3]]), name='G_b4')
-
-        self.G_W5 = tf.Variable(self.xavier_init([self.g_depths[3], self.x_size]), name='G_W5')
-        self.G_b5 = tf.Variable(tf.zeros(shape=[self.x_size]), name='G_b5')
-
-        self.theta_D = [self.D_W5, self.D_W4, self.D_W3, self.D_W2, self.D_W1,
-                        self.D_b5, self.D_b4, self.D_b3, self.D_b2, self.D_b1]
-        self.theta_G = [self.G_W5, self.G_W4, self.G_W3, self.G_W2, self.G_W1,
-                        self.G_b5, self.G_b4, self.G_b3, self.G_b2, self.G_b1]
-
-        self.G_sample = self.generator(self.Z, self.theta_G)
-        self.D_real = self.discriminator(self.X, self.theta_D)
-        self.D_fake = self.discriminator(self.G_sample, self.theta_D)
-
-        self.D_loss = tf.reduce_mean(self.D_real) - tf.reduce_mean(self.D_fake)
+        self.D_loss = -tf.reduce_mean(self.D_real) + tf.reduce_mean(self.D_fake)
         self.G_loss = -tf.reduce_mean(self.D_fake)
 
         self.saver = tf.train.Saver(max_to_keep=2500)
@@ -100,10 +125,10 @@ class WassersteinGAN(object):
     def train_local(self, g_iteration, d_iteration, learning_rate_D, learning_rate_G,
                     num_cluster, scale, std, sample_size, save_path):
         self.build_model()
-        D_solver = tf.train.RMSPropOptimizer(learning_rate_D).minimize(-self.D_loss,
-                                                          var_list=self.theta_D)
+        D_solver = tf.train.RMSPropOptimizer(learning_rate_D).minimize(self.D_loss,
+                                                              var_list=self.theta_D)
         G_solver = tf.train.RMSPropOptimizer(learning_rate_G).minimize(self.G_loss,
-                                                          var_list=self.theta_G)
+                                                              var_list=self.theta_G)
 
         clip_D = [p.assign(tf.clip_by_value(p, -self.clip_value,
                                         self.clip_value)) for p in self.theta_D]
@@ -129,6 +154,11 @@ class WassersteinGAN(object):
             _, G_loss_curr = self.sess.run([G_solver, self.G_loss],
                    feed_dict={self.Z: self.sample_Z(self.mb_size, self.z_size)}
             )
+            print D_loss_curr
+            print G_loss_curr
+
+            D_loss_list.append(D_loss_curr)
+            G_loss_list.append(G_loss_curr)
 
             if g_iter % 1000 == 0 or g_iter == g_iteration-1:
                 self.saver.save(self.sess, save_path+'model.ckpt', global_step=g_iter)
@@ -144,10 +174,6 @@ class WassersteinGAN(object):
                 plt.legend()
                 plt.savefig(save_path+'step_{}.png'.format(g_iter))
                 plt.close()
-
-            D_loss_list.append(D_loss_curr)
-            G_loss_list.append(G_loss_curr)
-
 
     def train(self, args):
         self.build_model()
@@ -186,7 +212,7 @@ class WassersteinGAN(object):
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
 
-            if g_iter % 1000 == 0 or g_iter == args.g_iteration-1:
+            if g_iter % 1000 == 0:
                 self.saver.save(self.sess, args.save_data_path+'model.ckpt', global_step=g_iter)
 
                 sample = self.sess.run([self.G_sample],
@@ -201,10 +227,26 @@ class WassersteinGAN(object):
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
                 plt.close()
 
-        plt.plot(np.arange(len(D_loss_list)), D_loss_list, label='D_loss')
-        plt.plot(np.arange(len(D_loss_list)), G_loss_list, label='G_loss')
-        plt.legend()
-        plt.savefig(args.save_fig_path+'loss.png')
-        plt.close()
+            if g_iter == args.g_iteration-1:
+                self.saver.save(self.sess, args.save_data_path+'model.ckpt', global_step=g_iter)
+
+                sample = self.sess.run([self.G_sample],
+                            feed_dict={self.Z: self.sample_Z(args.sample_size, self.z_size)}
+                )
+
+                X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
+
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+                plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
+                plt.legend()
+                plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
+                plt.close()
+
+                plt.plot(np.arange(len(D_loss_list)), D_loss_list, label='D_loss')
+                plt.plot(np.arange(len(D_loss_list)), G_loss_list, label='G_loss')
+                plt.legend()
+                plt.savefig(args.save_fig_path+'loss.png')
+                plt.close()
+
         np.savetxt(args.save_data_path+'d_loss.out', D_loss_list)
         np.savetxt(args.save_data_path+'g_loss.out', G_loss_list)

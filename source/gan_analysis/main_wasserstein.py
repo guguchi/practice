@@ -15,6 +15,7 @@ parser.add_argument('num_cluster', type=int)
 parser.add_argument('scale', type=float)
 parser.add_argument('std', type=float)
 parser.add_argument('z_size', type=int)
+parser.add_argument('clip_value', type=float)
 parser.add_argument('sample_size', type=int)
 
 args = parser.parse_args()
@@ -23,15 +24,14 @@ def main(_):
 
     x_size = 2
     z_range = 2.0
-    d_depths = [10, 10, 10, 10]
-    g_depths = [10, 10, 10, 10]
+    d_depths = [x_size, 64, 64*2, 64*3, 64*4, 1]
+    g_depths = [args.z_size, 64*4, 64*2*3, 64*2, 64, x_size]
     mb_size = 200
-    clip_value = 0.01
 
     with tf.Session() as sess:
 
         model = WassersteinGAN(sess, x_size, args.z_size, z_range, d_depths,
-                                   g_depths, mb_size, clip_value)
+                               g_depths, mb_size, args.clip_value)
         model.train(args)
 
 if __name__ == '__main__':
