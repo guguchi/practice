@@ -169,8 +169,8 @@ class WassersteinGAN(object):
 
                 X_mb = gaussian_mixture_circle(sample_size, num_cluster, scale, std)
 
-                plt.plot(sample[0].T[0], sample[0].T[1], 'ro', label='sampler')
-                plt.plot(X_mb.T[0], X_mb.T[1], 'bo', label='true')
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+                plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
                 plt.legend()
                 plt.savefig(save_path+'step_{}.png'.format(g_iter))
                 plt.close()
@@ -221,8 +221,8 @@ class WassersteinGAN(object):
 
                 X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
 
-                plt.plot(sample[0].T[0], sample[0].T[1], 'ro', ms = 1, label='sampler')
-                plt.plot(X_mb.T[0], X_mb.T[1], 'bo', ms = 1, label='true')
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', abel='sampler')
+                plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
                 plt.legend()
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
                 plt.close()
@@ -236,8 +236,8 @@ class WassersteinGAN(object):
 
                 X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
 
-                plt.plot(sample[0].T[0], sample[0].T[1], 'ro', ms = 1, label='sampler')
-                plt.plot(X_mb.T[0], X_mb.T[1], 'bo', ms = 1, label='true')
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
+                plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
                 plt.legend()
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
                 plt.close()
