@@ -7,18 +7,18 @@ from slurm import slurm_tools
 
 g_iteration = 100000
 d_iteration = 50
-learning_rate_D_list = [0.00005]#, 0.000025, 0.00001]
-learning_rate_G_list = [0.00005]#, 0.000025, 0.00001]
-num_cluster_list = [4]#[8]
+learning_rate_D_list = [0.00005, 0.000025, 0.00001]
+learning_rate_G_list = [0.00005, 0.000025, 0.00001]
+num_cluster_list = [8]
 scale = 2
 std = 0.2
-z_size_list = [50]#, 20, 10, 2, 1]
-clip_value_list = [0.01]#, 0.05, 0.1, 1.0]
+z_size_list = [50, 20, 10, 2, 1]
+clip_value_list = [0.01, 0.05, 0.1, 1.0]
 date = '20170401/'
 species = 'wasserstein_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'file/'
 save_fig_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'fig/'
-sample_size = 25000
+sample_size = 50000
 
 for learning_rate_D in learning_rate_D_list:
     for learning_rate_G in learning_rate_G_list:
