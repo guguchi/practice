@@ -6,17 +6,17 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
 step = 100000
-learning_rate_D_list = [0.00005]#, 0.00004, 0.00003, 0.00002, 0.00001]
-learning_rate_G_list = [0.00005]#, 0.00004, 0.00003, 0.00002, 0.00001]
-num_cluster_list = [4]#[8]
+learning_rate_D_list = [0.00005, 0.00004, 0.00003, 0.00002, 0.00001]
+learning_rate_G_list = [0.00005, 0.00004, 0.00003, 0.00002, 0.00001]
+num_cluster_list = [8]
 scale = 2
 std = 0.2
-z_size_list = [100]#, 50, 20, 10, 2, 1]
+z_size_list = [100, 50, 20, 10, 2, 1]
 date = '20170401/'
 species = 'vanilla_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'file/'
 save_fig_root = '/home/yamaguchi-s/Desktop/Research/practice/data/gan_analysis/'+date+species+'fig/'
-sample_size = 25000
+sample_size = 50000
 
 for learning_rate_D in learning_rate_D_list:
     for learning_rate_G in learning_rate_G_list:
