@@ -12,7 +12,7 @@ parser.add_argument('step', type=int)
 parser.add_argument('learning_rate_D', type=float)
 parser.add_argument('learning_rate_G', type=float)
 parser.add_argument('z_size', type=int)
-parser.add_argument('z_range', type=int)
+parser.add_argument('z_range', type=float)
 
 args = parser.parse_args()
 

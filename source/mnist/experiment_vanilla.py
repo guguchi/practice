@@ -6,10 +6,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
 step = 250000
-learning_rate_D_list = [0.00005, 0.000025, 0.00001]
-learning_rate_G_list = [0.00005, 0.00001]
-z_size_list = [200, 100, 50, 25, 10, 5, 2]
-z_range_list = [100.0, 10.0, 1.0]
+learning_rate_D_list = [0.00005]#, 0.000025, 0.00001]
+learning_rate_G_list = [0.00005]#], 0.00001]
+z_size_list = [200]#, 100, 50, 25, 10, 5, 2]
+z_range_list = [100.0]#, 10.0, 1.0]
 date = '20170402/'
 species = 'vanilla_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/mnist/'+date+species+'file/'
