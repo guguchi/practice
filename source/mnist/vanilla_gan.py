@@ -197,9 +197,7 @@ class VanillaGAN(object):
 
             if it % 1000 == 0:
                 self.saver.save(self.sess,
-                                args.save_data_path+'model.ckpt'.format(
-                                args.num_cluster, args.learning_rate_D,
-                                args.learning_rate_G), global_step=it)
+                                args.save_data_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
                              feed_dict={self.Z: self.sample_Z(36, self.z_size)})
@@ -210,9 +208,7 @@ class VanillaGAN(object):
 
             if it == args.step-1:
                 self.saver.save(self.sess,
-                                args.save_data_path+'model.ckpt'.format(
-                                args.num_cluster, args.learning_rate_D,
-                                args.learning_rate_G), global_step=it)
+                                args.save_data_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
                              feed_dict={self.Z: self.sample_Z(36, self.z_size)})
