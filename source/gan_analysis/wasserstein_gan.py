@@ -222,7 +222,7 @@ class WassersteinGAN(object):
                 X_mb = gaussian_mixture_circle(args.sample_size, args.num_cluster, args.scale, args.std)
 
                 plt.plot(X_mb.T[0], X_mb.T[1], 'o', label='true')
-                plt.plot(sample[0].T[0], sample[0].T[1], 'o', abel='sampler')
+                plt.plot(sample[0].T[0], sample[0].T[1], 'o', label='sampler')
                 plt.legend()
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(g_iter))
                 plt.close()
