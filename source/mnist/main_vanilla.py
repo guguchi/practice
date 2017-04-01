@@ -25,7 +25,7 @@ def main(_):
 
     with tf.Session() as sess:
 
-        model = VanillaGAN(sess, x_size, args.z_size, arhs.z_range, d_depths,
+        model = VanillaGAN(sess, x_size, args.z_size, args.z_range, d_depths,
                            g_depths, mb_size)
         model.train(args)
 
