@@ -60,7 +60,7 @@ class VanillaGAN(object):
                 )
                 b = self.get_biases(
                         name = 'D_b{}'.format(index+1),
-                        size = [self.g_depths[index+1]],
+                        size = [self.d_depths[index+1]],
                         value = 0.0
                 )
                 h = self.lrelu(tf.matmul(h, W) + b)
