@@ -11,7 +11,7 @@ import os
 from ops import batch_norm, batch_norm_wrapper
 
 
-class VanillaGAN(object):
+class LeastSquareGAN(object):
 
     def __init__(self, sess, x_size, z_size, z_range, d_depths, g_depths, mb_size):
         self.sess = sess
@@ -118,16 +118,16 @@ class VanillaGAN(object):
         self.theta_G = [v for v in train_variables if v.name.startswith("generator")]
         self.theta_D = [v for v in train_variables if v.name.startswith("discriminator")]
 
-        self.D_loss = -tf.reduce_mean(tf.log(self.D_real) + tf.log(1.0 - self.D_fake))
-        self.G_loss = -tf.reduce_mean(tf.log(self.D_fake))
+        self.D_loss = -tf.reduce_mean((self.D_real - 1.0)**2.0 + (self.D_fake + 1.0)**2.0)
+        self.G_loss = tf.reduce_mean((self.D_fake)**2.0)
 
         self.saver = tf.train.Saver(max_to_keep=2500)
 
     def train_local(self, step, learning_rate_D, learning_rate_G, save_path):
         self.build_model()
-        D_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.D_loss,
+        D_solver = tf.train.RMSPropOptimizer(learning_rate_D).minimize(self.D_loss,
                                                           var_list=self.theta_D)
-        G_solver = tf.train.AdamOptimizer(learning_rate_G).minimize(self.G_loss,
+        G_solver = tf.train.RMSPropOptimizer(learning_rate_G).minimize(self.G_loss,
                                                           var_list=self.theta_G)
         D_loss_list = []
         G_loss_list = []

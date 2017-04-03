@@ -8,7 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
-from ops import batch_norm, batch_norm_wrapper
+from ops import batch_norm_wrapper
 
 
 class VanillaGAN(object):
@@ -40,13 +40,10 @@ class VanillaGAN(object):
             initializer = tf.constant_initializer(value = value))
         return var
 
-    def lrelu(self, x, leak=0.2, name="lrelu"):
-        return tf.maximum(x, leak * x)
-
     def sample_Z(self, m, n):
         return np.random.uniform(-self.z_range, self.z_range, size=[m, n])
 
-    def discriminator(self, x, phase_train, scope_reuse):
+    def discriminator(self, x, scope_reuse):
         N = len(self.d_depths)
         with tf.variable_scope("discriminator") as scope:
             if scope_reuse:
@@ -60,10 +57,10 @@ class VanillaGAN(object):
                 )
                 b = self.get_biases(
                         name = 'D_b{}'.format(index+1),
-                        size = [self.g_depths[index+1]],
+                        size = [self.d_depths[index+1]],
                         value = 0.0
                 )
-                h = self.lrelu(tf.matmul(h, W) + b)
+                h = tf.nn.relu(tf.matmul(h, W) + b)
 
             W = self.get_weights(
                     name = 'D_W{}'.format(N-1),
@@ -72,15 +69,14 @@ class VanillaGAN(object):
             )
             b = self.get_biases(
                     name = 'D_b{}'.format(N-1),
-                    size = [self.g_depths[N-1]],
+                    size = [self.d_depths[N-1]],
                     value = 0.0
             )
             out = tf.nn.sigmoid(tf.matmul(h, W) + b)
         return out
 
-    def generator(self, z, phase_train):
+    def generator(self, z):
         N = len(self.g_depths)
-        scope_reuse = False
         with tf.variable_scope("generator") as scope:
             h = z
             for index in range(N - 2):
@@ -89,8 +85,12 @@ class VanillaGAN(object):
                         size = [self.g_depths[index], self.g_depths[index+1]],
                         stddev = self.xavier_init(self.g_depths[index])
                 )
-                h = self.lrelu(batch_norm_wrapper(tf.matmul(h, W), phase_train,
-                               'g_bn_{}'.format(index), scope_reuse))
+                b = self.get_biases(
+                        name = 'G_b{}'.format(index+1),
+                        size = [self.g_depths[index+1]],
+                        value = 0.0
+                )
+                h = tf.nn.relu(tf.matmul(h, W) + b)
 
             W = self.get_weights(
                     name = 'G_W{}'.format(N-1),
@@ -108,11 +108,10 @@ class VanillaGAN(object):
     def build_model(self):
         self.X = tf.placeholder(tf.float32, shape=[None, self.x_size])
         self.Z = tf.placeholder(tf.float32, shape=[None, self.z_size])
-        self.phase_train = tf.placeholder(tf.bool, name='phase_train')
 
-        self.G_sample = self.generator(self.Z, self.phase_train)
-        self.D_real = self.discriminator(self.X, self.phase_train, scope_reuse = False)
-        self.D_fake = self.discriminator(self.G_sample, self.phase_train, scope_reuse = True)
+        self.G_sample = self.generator(self.Z)
+        self.D_real = self.discriminator(self.X, scope_reuse = False)
+        self.D_fake = self.discriminator(self.G_sample, scope_reuse = True)
 
         train_variables = tf.trainable_variables()
         self.theta_G = [v for v in train_variables if v.name.startswith("generator")]
@@ -144,11 +143,9 @@ class VanillaGAN(object):
             X_mb, _ = mnist.train.next_batch(self.mb_size)
 
             _, D_loss_curr = self.sess.run([D_solver, self.D_loss], feed_dict={
-                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
-                 self.phase_train: True})
+                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
             _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
-                              self.Z: self.sample_Z(self.mb_size, self.z_size),
-                              self.phase_train: True})
+                              self.Z: self.sample_Z(self.mb_size, self.z_size)})
 
             print self.sess.run([self.theta_G])
             print D_loss_curr
@@ -158,7 +155,7 @@ class VanillaGAN(object):
                 self.saver.save(self.sess, save_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
-                              feed_dict={self.Z: self.sample_Z(36, self.z_size), self.phase_train: False})
+                              feed_dict={self.Z: self.sample_Z(36, self.z_size)})
 
                 fig = self.plot(samples[0])
                 plt.savefig(save_path+'{}.png'.format(it), bbox_inches='tight')
@@ -192,11 +189,9 @@ class VanillaGAN(object):
             X_mb, _ = mnist.train.next_batch(self.mb_size)
 
             _, D_loss_curr = self.sess.run([D_solver, self.D_loss], feed_dict={
-                self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
-                self.phase_train: True})
+                self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size)})
             _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
-                              self.Z: self.sample_Z(self.mb_size, self.z_size),
-                              self.phase_train: True})
+                              self.Z: self.sample_Z(self.mb_size, self.z_size)})
 
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
@@ -206,8 +201,7 @@ class VanillaGAN(object):
                                 args.save_data_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
-                             feed_dict={self.Z: self.sample_Z(36, self.z_size),
-                             self.phase_train: False})
+                             feed_dict={self.Z: self.sample_Z(36, self.z_size)})
 
                 fig = self.plot(samples[0])
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(it))
@@ -218,8 +212,7 @@ class VanillaGAN(object):
                                 args.save_data_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
-                             feed_dict={self.Z: self.sample_Z(36, self.z_size),
-                             self.phase_train: False})
+                             feed_dict={self.Z: self.sample_Z(36, self.z_size)})
 
                 fig = self.plot(samples[0])
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(it))
