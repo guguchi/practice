@@ -6,9 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
 step = 100000
-learning_rate_D_list = [0.0002, 0.0001, 0.00005]
-learning_rate_G_list = [0.0002, 0.0001, 0.00005]
-z_size_list = [200, 100, 50, 10, 5]
+learning_rate_D_list = [0.0002]#, 0.0001, 0.00005]
+learning_rate_G_list = [0.0002]#, 0.0001, 0.00005]
+z_size_list = [200]#, 100, 50, 10, 5]
 z_range_list = [100.0]
 date = '20170403/'
 species = 'vanilla_gan/'
