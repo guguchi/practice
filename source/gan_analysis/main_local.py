@@ -13,7 +13,7 @@ def main(_):
     g_depths = [z_size, 50, 50, 50, 50, x_size]
     mb_size = 128
     phase = 'train'#'test'#
-    species =  'vanilla_gan'#'wesserstein_gan'#
+    species =  'wesserstein_gan'#'vanilla_gan'#
 
     learning_rate_D = 0.00001
     learning_rate_G = 0.00001
