@@ -201,7 +201,7 @@ class VanillaGAN(object):
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
 
-            if it % 1000 == 0:
+            if it % 2000 == 0:
                 self.saver.save(self.sess,
                                 args.save_data_path+'model.ckpt', global_step=it)
 
