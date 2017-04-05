@@ -247,8 +247,7 @@ class BEGAN(object):
                 plt.savefig(args.save_fig_path+'step_{}.png'.format(it))
                 plt.close()
 
-                plt.plot(np.arange(len(D_loss_list)), D_loss_list, label='D')
-                plt.plot(np.arange(len(G_loss_list)), G_loss_list, label='G')
+                plt.plot(np.arange(len(m_loss_list)), m_loss_list, label='m_global')
                 plt.legend()
                 plt.savefig(args.save_fig_path+'loss.png')
                 plt.close()

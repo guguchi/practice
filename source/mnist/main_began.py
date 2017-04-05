@@ -17,8 +17,6 @@ parser.add_argument('gamma', type=float)
 parser.add_argument('h_size', type=int)
 parser.add_argument('_lambda', type=float)
 
-
-
 args = parser.parse_args()
 
 def main(_):
