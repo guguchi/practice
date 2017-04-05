@@ -7,11 +7,11 @@ from slurm import slurm_tools
 
 g_iteration = 100000
 d_iteration = 5
-learning_rate_D_list = [0.00015, 0.0001, 0.00005]
-learning_rate_G_list = [0.00015, 0.0001, 0.00005]
-z_size_list = [200, 100, 50, 10, 5, 2]
+learning_rate_D_list = [0.00015]#, 0.0001, 0.00005]
+learning_rate_G_list = [0.00015]#, 0.0001, 0.00005]
+z_size_list = [200]#, 100, 50, 10, 5, 2]
 z_range = 200.0
-clip_value_list = [0.1, 0.05, 0.01, 0.005]
+clip_value_list = [0.1]#, 0.05, 0.01, 0.005]
 date = '20170405/'
 species = 'w_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/mnist/'+date+species+'file/'
