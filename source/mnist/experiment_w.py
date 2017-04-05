@@ -6,13 +6,13 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
 g_iteration = 100000
-d_iteration = 5
-learning_rate_D_list = [0.00015, 0.0001, 0.00005]
-learning_rate_G_list = [0.00015, 0.0001, 0.00005]
+d_iteration = 3
+learning_rate_D_list = [0.0001, 0.00005]
+learning_rate_G_list = [0.0001, 0.00005]
 z_size_list = [200, 100, 50, 10, 5, 2]
 z_range = 200.0
-clip_value_list = [0.1, 0.05, 0.01, 0.005]
-date = '20170405/'
+clip_value_list = [0.005]
+date = '20170406/'
 species = 'w_gan/'
 save_data_root = '/home/yamaguchi-s/Desktop/Research/practice/data/mnist/'+date+species+'file/'
 save_fig_root = '/home/yamaguchi-s/Desktop/Research/practice/data/mnist/'+date+species+'fig/'
