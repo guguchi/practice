@@ -29,7 +29,7 @@ for learning_rate_D in learning_rate_D_list:
                 save_fig_path = save_fig_root+'d_{}_g_{}_sz{}_rng_{}/'.format(
                       learning_rate_D, learning_rate_G, z_size, z_range)
 
-                SLURM_commands=['python /home/yamaguchi-s/Desktop/Research/practice/source/mnist/main_vanilla.py {} {} {} {} {} {} {} {} {} {}'.format(
+                SLURM_commands=['python /home/yamaguchi-s/Desktop/Research/practice/source/mnist/main_w.py {} {} {} {} {} {} {} {} {} {}'.format(
                                 save_data_path, save_fig_path, mnist_data_path,
                                 g_iteration, d_iteration, learning_rate_D, learning_rate_G,
                                 z_size, z_range, clip_value)]
