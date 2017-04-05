@@ -11,9 +11,9 @@ import os
 from ops import batch_norm, batch_norm_wrapper
 
 
-class VanillaGAN(object):
+class BEGAN(object):
 
-    def __init__(self, sess, x_size, z_size, z_range, d_depths, g_depths, mb_size):
+    def __init__(self, sess, x_size, z_size, z_range, d_depths, g_depths, mb_size, gamma):
         self.sess = sess
         self.x_size = x_size
         self.z_size = z_size
@@ -21,6 +21,7 @@ class VanillaGAN(object):
         self.d_depths = d_depths
         self.g_depths = g_depths
         self.mb_size = mb_size
+        self.gamma = gamma
 
     def xavier_init(self, in_dim):
         xavier_stddev = 1. / tf.sqrt(in_dim / 2.)
@@ -47,16 +48,16 @@ class VanillaGAN(object):
         return np.random.uniform(-self.z_range, self.z_range, size=[m, n])
 
     def discriminator(self, x, phase_train, scope_reuse):
-        N = len(self.d_depths)
+        N_d = len(self.d_depths)
         with tf.variable_scope("discriminator") as scope:
             if scope_reuse:
                 scope.reuse_variables()
             h = x
-            for index in range(N - 2):
+            for index in range(N_d - 2):
                 W = self.get_weights(
                         name = 'D_W{}'.format(index+1),
                         size = [self.d_depths[index], self.d_depths[index+1]],
-                        stddev = self.xavier_init(self.d_depths[index])
+                        stddev = self.xavier_init(self.g_depths[index])
                 )
                 b = self.get_biases(
                         name = 'D_b{}'.format(index+1),
@@ -66,24 +67,24 @@ class VanillaGAN(object):
                 h = self.lrelu(tf.matmul(h, W) + b)
 
             W = self.get_weights(
-                    name = 'D_W{}'.format(N-1),
-                    size = [self.d_depths[N-2], self.d_depths[N-1]],
-                    stddev = self.xavier_init(self.d_depths[N-2])
+                    name = 'D_W{}'.format(N_d-1),
+                    size = [self.d_depths[N_d-2], self.d_depths[N_d-1]],
+                    stddev = self.xavier_init(self.g_depths[N_d-2])
             )
             b = self.get_biases(
-                    name = 'D_b{}'.format(N-1),
-                    size = [self.d_depths[N-1]],
+                    name = 'D_b{}'.format(N_d-1),
+                    size = [self.d_depths[N_d-1]],
                     value = 0.0
             )
             out = tf.nn.sigmoid(tf.matmul(h, W) + b)
         return out
 
     def generator(self, z, phase_train):
-        N = len(self.g_depths)
+        N_g = len(self.g_depths)
         scope_reuse = False
         with tf.variable_scope("generator") as scope:
             h = z
-            for index in range(N - 2):
+            for index in range(N_g - 2):
                 W = self.get_weights(
                         name = 'G_W{}'.format(index+1),
                         size = [self.g_depths[index], self.g_depths[index+1]],
@@ -93,42 +94,58 @@ class VanillaGAN(object):
                                'g_bn_{}'.format(index), scope_reuse))
 
             W = self.get_weights(
-                    name = 'G_W{}'.format(N-1),
-                    size = [self.g_depths[N-2], self.g_depths[N-1]],
-                    stddev = self.xavier_init(self.g_depths[N-2])
+                    name = 'G_W{}'.format(N_g-1),
+                    size = [self.g_depths[N_g-2], self.g_depths[N_g-1]],
+                    stddev = self.xavier_init(self.g_depths[N_g-2])
             )
             b = self.get_biases(
-                    name = 'G_b{}'.format(N-1),
-                    size = [self.g_depths[N-1]],
+                    name = 'G_b{}'.format(N_g-1),
+                    size = [self.g_depths[N_g-1]],
                     value = 0.0
             )
             out = tf.nn.sigmoid(tf.matmul(h, W) + b)
         return out
+
+    def l1_norm(self, x):
+        x_abs = tf.abs(x)
+        l1 = tf.reduce_sum(x_abs, axis=1)
+        return l1
 
     def build_model(self):
         self.X = tf.placeholder(tf.float32, shape=[None, self.x_size])
         self.Z = tf.placeholder(tf.float32, shape=[None, self.z_size])
         self.phase_train = tf.placeholder(tf.bool, name='phase_train')
 
+        self.k = self.get_biases(name = 'k', size = [1], value = 0.0)
+
         self.G_sample = self.generator(self.Z, self.phase_train)
         self.D_real = self.discriminator(self.X, self.phase_train, scope_reuse = False)
         self.D_fake = self.discriminator(self.G_sample, self.phase_train, scope_reuse = True)
+
+        self.L_x = self.l1_norm(self.X-self.D_real)
+        self.L_z = self.l1_norm(self.G_sample-self.D_fake)
+
+        self.AAA = tf.shape(self.L_x)
 
         train_variables = tf.trainable_variables()
         self.theta_G = [v for v in train_variables if v.name.startswith("generator")]
         self.theta_D = [v for v in train_variables if v.name.startswith("discriminator")]
 
-        self.D_loss = -tf.reduce_mean(tf.log(self.D_real) + tf.log(1.0 - self.D_fake))
-        self.G_loss = -tf.reduce_mean(tf.log(self.D_fake))
+        self.D_loss = tf.reduce_mean(self.L_x-self.k*self.L_z)
+        self.G_loss = tf.reduce_mean(self.L_z)
 
         self.saver = tf.train.Saver(max_to_keep=2500)
 
-    def train_local(self, step, learning_rate_D, learning_rate_G, save_path):
+    def train_local(self, step, learning_rate_D, learning_rate_G, save_path, _lambda):
         self.build_model()
         D_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.D_loss,
                                                           var_list=self.theta_D)
         G_solver = tf.train.AdamOptimizer(learning_rate_G).minimize(self.G_loss,
                                                           var_list=self.theta_G)
+        self.k = self.k+_lambda*(tf.reduce_mean(self.gamma*self.L_x-self.L_z))
+        clip_K = tf.clip_by_value(self.k, 0.0, 1.0)
+
+        M_global = tf.reduce_mean(self.L_x)+tf.abs(tf.reduce_mean(self.gamma*self.L_x-self.L_z))
         D_loss_list = []
         G_loss_list = []
 
@@ -143,18 +160,16 @@ class VanillaGAN(object):
 
             X_mb, _ = mnist.train.next_batch(self.mb_size)
 
-            _, D_loss_curr = self.sess.run([D_solver, self.D_loss], feed_dict={
+            _, D_loss_curr, _, G_loss_curr, K , m_global= self.sess.run([D_solver, self.D_loss,
+                 G_solver, self.G_loss, clip_K, M_global], feed_dict={
                  self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
                  self.phase_train: True})
-            _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
-                              self.Z: self.sample_Z(self.mb_size, self.z_size),
-                              self.phase_train: True})
 
-            print self.sess.run([self.theta_G])
-            print D_loss_curr
-            print G_loss_curr
+            print K
+            print m_global
+            print '----'
 
-            if it % 100 == 0 or it == step-1:
+            if it % 1000 == 0 or it == step-1:
                 self.saver.save(self.sess, save_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.G_sample],
@@ -174,8 +189,13 @@ class VanillaGAN(object):
                                                           var_list=self.theta_D)
         G_solver = tf.train.AdamOptimizer(args.learning_rate_G).minimize(self.G_loss,
                                                           var_list=self.theta_G)
-        D_loss_list = []
-        G_loss_list = []
+
+        self.k = self.k+args._lambda*(tf.reduce_mean(self.gamma*self.L_x-self.L_z))
+        clip_k = tf.clip_by_value(self.k, 0.0, 1.0)
+
+        M_global = tf.reduce_mean(self.L_x)+tf.abs(tf.reduce_mean(self.gamma*self.L_x-self.L_z))
+
+        m_loss_list = []
 
         mnist = input_data.read_data_sets(args.mnist_data_path, one_hot=True)
 
@@ -191,15 +211,17 @@ class VanillaGAN(object):
 
             X_mb, _ = mnist.train.next_batch(self.mb_size)
 
-            _, D_loss_curr = self.sess.run([D_solver, self.D_loss], feed_dict={
-                self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
-                self.phase_train: True})
-            _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
-                              self.Z: self.sample_Z(self.mb_size, self.z_size),
-                              self.phase_train: True})
+            _, D_loss_curr, = self.sess.run([D_solver, self.D_loss],
+                 feed_dict={self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
+                 self.phase_train: True})
+            _, G_loss_curr, _, m_global = \
+                 self.sess.run(
+                 [G_solver, self.G_loss, clip_k, M_global],
+                 feed_dict={
+                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
+                 self.phase_train: True})
 
-            D_loss_list.append(D_loss_curr)
-            G_loss_list.append(G_loss_curr)
+            m_loss_list.append(m_global)
 
             if it % 2000 == 0:
                 self.saver.save(self.sess,
