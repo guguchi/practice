@@ -183,6 +183,10 @@ class WassersteinGAN(object):
                                                           var_list=self.theta_D)
         G_solver = tf.train.AdamOptimizer(args.learning_rate_G).minimize(self.G_loss,
                                                           var_list=self.theta_G)
+
+        clip_D = [p.assign(tf.clip_by_value(p, -self.clip_value,
+                                        self.clip_value)) for p in self.theta_D]
+
         D_loss_list = []
         G_loss_list = []
 
