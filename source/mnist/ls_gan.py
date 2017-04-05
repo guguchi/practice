@@ -118,7 +118,7 @@ class LeastSquareGAN(object):
         self.theta_G = [v for v in train_variables if v.name.startswith("generator")]
         self.theta_D = [v for v in train_variables if v.name.startswith("discriminator")]
 
-        self.D_loss = -tf.reduce_mean((self.D_real - 1.0)**2.0 + (self.D_fake + 1.0)**2.0)
+        self.D_loss = tf.reduce_mean((self.D_real - 1.0)**2.0) + tf.reduce_mean((self.D_fake + 1.0)**2.0)
         self.G_loss = tf.reduce_mean((self.D_fake)**2.0)
 
         self.saver = tf.train.Saver(max_to_keep=2500)
