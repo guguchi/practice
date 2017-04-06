@@ -30,7 +30,7 @@ def main(_):
     with tf.Session() as sess:
 
         model = BEGAN(sess, x_size, args.z_size, args.z_range, d_depths,
-                      g_depths, mb_size, gamma)
+                      g_depths, mb_size, args.gamma)
         model.train(args)
 
 
