@@ -170,9 +170,9 @@ class LeastSquareGAN(object):
 
     def train(self, args):
         self.build_model()
-        D_solver = tf.train.AdamOptimizer(args.learning_rate_D).minimize(self.D_loss,
+        D_solver = tf.train.RMSPropOptimizer(args.learning_rate_D).minimize(self.D_loss,
                                                           var_list=self.theta_D)
-        G_solver = tf.train.AdamOptimizer(args.learning_rate_G).minimize(self.G_loss,
+        G_solver = tf.train.RMSPropOptimizer(args.learning_rate_G).minimize(self.G_loss,
                                                           var_list=self.theta_G)
         D_loss_list = []
         G_loss_list = []
@@ -201,7 +201,7 @@ class LeastSquareGAN(object):
             D_loss_list.append(D_loss_curr)
             G_loss_list.append(G_loss_curr)
 
-            if it % 1000 == 0:
+            if it % 2000 == 0:
                 self.saver.save(self.sess,
                                 args.save_data_path+'model.ckpt', global_step=it)
 
