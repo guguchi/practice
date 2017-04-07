@@ -57,7 +57,7 @@ class BEGAN(object):
                 W = self.get_weights(
                         name = 'D_W{}'.format(index+1),
                         size = [self.d_depths[index], self.d_depths[index+1]],
-                        stddev = self.xavier_init(self.g_depths[index])
+                        stddev = self.xavier_init(self.d_depths[index])
                 )
                 b = self.get_biases(
                         name = 'D_b{}'.format(index+1),
@@ -69,7 +69,7 @@ class BEGAN(object):
             W = self.get_weights(
                     name = 'D_W{}'.format(N_d-1),
                     size = [self.d_depths[N_d-2], self.d_depths[N_d-1]],
-                    stddev = self.xavier_init(self.g_depths[N_d-2])
+                    stddev = self.xavier_init(self.d_depths[N_d-2])
             )
             b = self.get_biases(
                     name = 'D_b{}'.format(N_d-1),
