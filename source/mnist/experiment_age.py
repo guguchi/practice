@@ -6,12 +6,12 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 from slurm import slurm_tools
 
 step = 100000
-learning_rate_D_list = [0.0001]#, 0.0002]
-learning_rate_G_list = [0.0001]#, 0.0002]
+learning_rate_D_list = [0.0001, 0.0002]
+learning_rate_G_list = [0.0001, 0.0002]
 z_size = 10
-z_range_list = [1.0]#, 10.0, 100.0]
-lam_list = [500]#, 1000, 2000]
-mu_list = [10]#, 100, 1000]
+z_range_list = [1.0, 10.0, 100.0]
+lam_list = [500, 1000, 2000]
+mu_list = [10, 100, 1000]
 _lambda = 0.001
 
 date = '20170413/'
