@@ -26,11 +26,11 @@ for learning_rate_D in learning_rate_D_list:
         for z_range in z_range_list:
             for lam in lam_list:
                 for mu in mu_list:
-                    save_data_path = save_data_root+'d_{}_g_{}_gm_{}_h_{}/'.format(
-                          learning_rate_D, learning_rate_G, gamma, h_size)
+                    save_data_path = save_data_root+'d_{}_g_{}_z_{}_lam_{}_mu_{}/'.format(
+                          learning_rate_D, learning_rate_G, z_range, lam, mu)
 
-                    save_fig_path = save_fig_root+'d_{}_g_{}_gm_{}_h_{}/'.format(
-                          learning_rate_D, learning_rate_G, gamma, h_size)
+                    save_fig_path = save_fig_root'd_{}_g_{}_z_{}_lam_{}_mu_{}/'.format(
+                          learning_rate_D, learning_rate_G, z_range, lam, mu)
 
                     SLURM_commands=['python /home/yamaguchi-s/Desktop/Research/practice/source/mnist/main_age.py {} {} {} {} {} {} {} {} {} {}'.format(
                                     save_data_path, save_fig_path, mnist_data_path,
