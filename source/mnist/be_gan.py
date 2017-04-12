@@ -108,7 +108,7 @@ class BEGAN(object):
 
     def l1_norm(self, x):
         x_abs = tf.abs(x)
-        l1 = tf.reduce_sum(x_abs, axis=1)
+        l1 = tf.reduce_mean(x_abs, axis=1)
         return l1
 
     def build_model(self):
