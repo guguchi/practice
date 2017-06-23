@@ -28,6 +28,11 @@ from __future__ import print_function
 import argparse
 import sys
 
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 from tensorflow.examples.tutorials.mnist import input_data
 
 import tensorflow as tf
@@ -110,6 +115,35 @@ def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
+def sample_gumbel(shape, eps=1e-20):
+  """Sample from Gumbel(0, 1)"""
+  U = tf.random_uniform(shape,minval=0,maxval=1)
+  return -tf.log(-tf.log(U + eps) + eps)
+
+def gumbel_softmax_sample(logits, temperature):
+  """ Draw a sample from the Gumbel-Softmax distribution"""
+  y = logits + sample_gumbel(tf.shape(logits))
+  return tf.nn.softmax( y / temperature)
+
+def gumbel_softmax(logits, temperature, hard=False):
+  """Sample from the Gumbel-Softmax distribution and optionally discretize.
+  Args:
+    logits: [batch_size, n_class] unnormalized log-probs
+    temperature: non-negative scalar
+    hard: if True, take argmax, but differentiate w.r.t. soft sample y
+  Returns:
+    [batch_size, n_class] sample from the Gumbel-Softmax distribution.
+    If hard=True, then the returned sample will be one-hot, otherwise it will
+    be a probabilitiy distribution that sums to 1 across classes
+  """
+  y = gumbel_softmax_sample(logits, temperature)
+  if hard:
+    k = tf.shape(logits)[-1]
+    #y_hard = tf.cast(tf.one_hot(tf.argmax(y,1),k), y.dtype)
+    y_hard = tf.cast(tf.equal(y,tf.reduce_max(y,1,keep_dims=True)),y.dtype)
+    y = tf.stop_gradient(y_hard - y) + y
+  return y
+
 
 def main(_):
     # Import data
@@ -124,15 +158,21 @@ def main(_):
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
 
+    logits = y_conv
+    y_pred = gumbel_softmax(logits, 1.0, hard=False)
+    loss = tf.reduce_mean(tf.maximum((y_pred - y_) ** 2.0, 1.0))
+
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
-    train_step = tf.train.AdamOptimizer(0.0001).minimize(cross_entropy)
+
+    train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
     correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     test_accuracy_list = []
+    loss_list = []
     cross_entropy_list = []
-    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/vanilla/'
+    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/gumbel_softmax/'
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
@@ -147,16 +187,23 @@ def main(_):
                 #    x: batch[0], y_: batch[1], keep_prob: 1.0})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
                 test_accuracy_list.append(train_accuracy)
-            _, cross_entropy_curr = sess.run([train_step, cross_entropy], feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+            _, loss_curr, cross_entropy_curr, sess.run([train_step, loss, cross_entropy],
+                                                       feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+            loss_list.append(loss_curr)
             cross_entropy_list.append(cross_entropy_curr)
 
         test_accuracy = accuracy.eval(feed_dict={
             x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
         print('test accuracy %g' % test_accuracy)
         test_accuracy_list.append(test_accuracy)
+
         plt.plot(np.arange(len(test_accuracy_list)), test_accuracy_list, label='test accuracy')
         plt.legend()
         plt.savefig(save_data_path+'test_accuracy_list.png')
+        plt.close()
+        plt.plot(np.arange(len(loss_list)), loss_list, label='test accuracy')
+        plt.legend()
+        plt.savefig(save_data_path+'loss_list.png')
         plt.close()
         plt.plot(np.arange(len(cross_entropy_list)), cross_entropy_list, label='test accuracy')
         plt.legend()
