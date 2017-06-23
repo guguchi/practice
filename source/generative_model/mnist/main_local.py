@@ -18,8 +18,8 @@ def main(_):
     phase = 'train'#'test'#
     species =  'age'#'be_gan'#'w_gan'#'ls_gan'#'vanilla_gan'#
 
-    learning_rate_D = 0.0002
-    learning_rate_G = 0.0002
+    learning_rate_D = 0.0001
+    learning_rate_G = 0.0001
     save_path = '../../data/mnist/20170405/'+species+'/d_{}_g_{}/'.format(
                           learning_rate_D, learning_rate_G)
     step = 10000
@@ -54,8 +54,8 @@ def main(_):
 
         if species == 'age':
             if phase == 'train':
-                lam = 2000.0
-                mu = 1000.0
+                lam = 500.0
+                mu = 100.0
                 model = AGE(sess, x_size, z_size, z_range, d_depths, g_depths, mb_size, lam, mu)
                 model.train_local(step, learning_rate_D, learning_rate_G, save_path)
 

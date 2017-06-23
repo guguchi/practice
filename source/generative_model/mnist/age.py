@@ -122,9 +122,9 @@ class AGE(object):
         return out
 
     def kl_divergence(self, x):
-        x_mean = tf.reduce_mean(x, axis=1)
-        x_var = tf.reduce_mean((x-tf.reshape(x_mean, [self.mb_size, 1]))**2.0, axis=1)
-        kl_div = 0.5*tf.reduce_mean(x_mean**2.0+x_var**2.0-2.0*tf.log(x_var))
+        x_mean = tf.reduce_mean(x, axis=0)
+        x_var = tf.reduce_mean((x-x_mean)**2.0, axis=0)#tf.reshape(x_mean, [self.z_size, 1])
+        kl_div = 0.5*tf.reduce_sum(x_mean**2.0+x_var**2.0-2.0*tf.log(x_var))
         return kl_div
 
     def build_model(self):
@@ -139,15 +139,17 @@ class AGE(object):
 
         self.V2_loss = self.kl_divergence(self.e_false)-self.kl_divergence(self.e_true)
 
-        self.reconst_x_loss = (self.g_true-self.X)**2.0
-        self.reconst_z_loss = (self.e_false-self.Z)**2.0
+        self.reconst_x_loss = tf.reduce_sum(tf.abs(self.g_true-self.X), axis=1)
+        self.reconst_z_loss = tf.reduce_sum(tf.abs(self.e_false-self.Z), axis=1)
 
         train_variables = tf.trainable_variables()
         self.theta_G = [v for v in train_variables if v.name.startswith('generator')]
         self.theta_E = [v for v in train_variables if v.name.startswith('encoder')]
 
-        self.G_loss = tf.reduce_mean(self.V2_loss+self.lam*self.reconst_z_loss)
-        self.E_loss = -tf.reduce_mean(self.V2_loss-self.mu*self.reconst_x_loss)
+        self.G_loss = tf.reduce_mean(self.V2_loss)+tf.reduce_mean(self.lam*self.reconst_z_loss)
+        self.E_loss = -tf.reduce_mean(self.V2_loss)+tf.reduce_mean(self.mu*self.reconst_x_loss)
+        self.LOSS = tf.reduce_mean(self.V2_loss)
+        self.AE_loss = tf.reduce_mean(self.reconst_x_loss)
 
         self.saver = tf.train.Saver(max_to_keep=2500)
 
@@ -157,6 +159,8 @@ class AGE(object):
                                                           var_list=self.theta_G)
         E_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.E_loss,
                                                           var_list=self.theta_E)
+        AE_solver = tf.train.AdamOptimizer(learning_rate_D).minimize(self.AE_loss,
+                                                          var_list=self.theta_E+self.theta_G)
 
         E_loss_list = []
         G_loss_list = []
@@ -168,20 +172,52 @@ class AGE(object):
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
+        for it in range(3000):
+            print 'step:{}'.format(it)
+            X_mb, _ = mnist.train.next_batch(self.mb_size)
+
+            _, AE_loss_curr= self.sess.run([AE_solver, self.AE_loss], feed_dict={
+                                            self.X: X_mb, self.phase_train: True})
+            print AE_loss_curr
+            if it % 500 == 0 or it == step-1:
+                self.saver.save(self.sess, save_path+'model.ckpt', global_step=it)
+
+                samples = self.sess.run([self.g_true],
+                              feed_dict={self.X: mnist.train.next_batch(36)[0], self.phase_train: False})
+
+                fig = self.plot(samples[0])
+                plt.savefig(save_path+'pre_x_{}.png'.format(it), bbox_inches='tight')
+                plt.close(fig)
+
         for it in range(step):
             print 'step:{}'.format(it)
 
             X_mb, _ = mnist.train.next_batch(self.mb_size)
-
+            
             _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
                 self.phase_train: True})
-
-            _, E_loss_curr= self.sess.run([E_solver, self.E_loss], feed_dict={
+            _, E_loss_curr, LOSS= self.sess.run([E_solver, self.E_loss, self.LOSS], feed_dict={
                 self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
                 self.phase_train: True})
+            """
+            for i in range(3):
+                _, G_loss_curr = self.sess.run([G_solver, self.G_loss], feed_dict={
+                    self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
+                    self.phase_train: True})
+            for i in range(3):
+                _, E_loss_curr, LOSS= self.sess.run([E_solver, self.E_loss, self.LOSS], feed_dict={
+                    self.X: X_mb, self.Z: self.sample_Z(self.mb_size, self.z_size),
+                    self.phase_train: True})
+            """
 
-            if it % 200 == 0 or it == step-1:
+            print G_loss_curr
+            print E_loss_curr
+            print LOSS
+            print '----'
+            #_, AE_loss_curr= self.sess.run([AE_solver, self.AE_loss], feed_dict={
+            #    self.X: X_mb, self.phase_train: True})
+            if it % 500 == 0 or it == step-1:
                 self.saver.save(self.sess, save_path+'model.ckpt', global_step=it)
 
                 samples = self.sess.run([self.g_false],
@@ -198,8 +234,8 @@ class AGE(object):
                 plt.savefig(save_path+'x_{}.png'.format(it), bbox_inches='tight')
                 plt.close(fig)
 
-            E_loss_list.append(E_loss_curr)
-            G_loss_list.append(G_loss_curr)
+            #E_loss_list.append(E_loss_curr)
+            #G_loss_list.append(G_loss_curr)
 
 
     def train(self, args):
