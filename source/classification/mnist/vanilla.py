@@ -136,7 +136,9 @@ def main(_):
             batch = mnist.train.next_batch(50)
             if i % 100 == 0:
                 train_accuracy = accuracy.eval(feed_dict={
-                    x: batch[0], y_: batch[1], keep_prob: 1.0})
+                    x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+                #train_accuracy = accuracy.eval(feed_dict={
+                #    x: batch[0], y_: batch[1], keep_prob: 1.0})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
@@ -150,4 +152,3 @@ if __name__ == '__main__':
                       help='Directory for storing input data')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-    
