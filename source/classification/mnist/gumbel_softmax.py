@@ -27,6 +27,7 @@ from __future__ import print_function
 
 import argparse
 import sys
+import os
 
 import numpy as np
 import matplotlib
@@ -160,7 +161,7 @@ def main(_):
 
     logits = y_conv
     y_pred = gumbel_softmax(logits, 1.0, hard=False)
-    loss = tf.reduce_mean(tf.maximum((y_pred - y_) ** 2.0, 1.0))
+    loss = tf.reduce_mean(-tf.matmul(tf.reshape(y_pred, [50, 1, 10]), tf.reshape(y_, [50, 10, 1])))
 
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_conv))
@@ -178,7 +179,7 @@ def main(_):
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        for i in range(20000):
+        for i in range(100000):
             batch = mnist.train.next_batch(50)
             if i % 100 == 0:
                 train_accuracy = accuracy.eval(feed_dict={
@@ -187,10 +188,13 @@ def main(_):
                 #    x: batch[0], y_: batch[1], keep_prob: 1.0})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
                 test_accuracy_list.append(train_accuracy)
-            _, loss_curr, cross_entropy_curr, sess.run([train_step, loss, cross_entropy],
+            _, loss_curr, cross_entropy_curr, A, B = sess.run([train_step, loss, cross_entropy, y_, y_pred],
                                                        feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
             loss_list.append(loss_curr)
             cross_entropy_list.append(cross_entropy_curr)
+            #print(A[0])
+            #print(B[0])
+            #print('---------')
 
         test_accuracy = accuracy.eval(feed_dict={
             x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})

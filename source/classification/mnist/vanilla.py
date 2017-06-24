@@ -27,6 +27,12 @@ from __future__ import print_function
 
 import argparse
 import sys
+import os
+
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from tensorflow.examples.tutorials.mnist import input_data
 
