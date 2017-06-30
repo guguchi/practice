@@ -64,7 +64,8 @@ def deepnn(x, _dropout):
     h_1 = tf.nn.relu(tf.matmul(x_image, W_1) + b_1)
     if _dropout:
         h_1 = tf.nn.dropout(h_1, keep_prob)
-    entropy_1 = compute_entropy_with_svd(W_1)
+    #entropy_1 = compute_entropy_with_svd(W_1)
+    jacobian = W_1
 
     # 2 layer
     W_2 = weight_variable([784, 784])
@@ -72,7 +73,8 @@ def deepnn(x, _dropout):
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     if _dropout:
         h_2 = tf.nn.dropout(h_2, keep_prob)
-    entropy_2 = compute_entropy_with_svd(W_2)
+    #entropy_2 = compute_entropy_with_svd(W_2)
+    jacobian = tf.matmul(W_2, jacobian)
 
     # 3 layer
     W_3 = weight_variable([784, 784])
@@ -80,7 +82,8 @@ def deepnn(x, _dropout):
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     if _dropout:
         h_3 = tf.nn.dropout(h_3, keep_prob)
-    entropy_3 = compute_entropy_with_svd(W_3)
+    #entropy_3 = compute_entropy_with_svd(W_3)
+    jacobian = tf.matmul(W_3, jacobian)
 
     # 4 layer
     W_4 = weight_variable([784, 784])
@@ -88,7 +91,8 @@ def deepnn(x, _dropout):
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     if _dropout:
         h_4 = tf.nn.dropout(h_4, keep_prob)
-    entropy_4 = compute_entropy_with_svd(W_4)
+    #entropy_4 = compute_entropy_with_svd(W_4)
+    jacobian = tf.matmul(W_4, jacobian)
 
     # 5 layer
     W_5 = weight_variable([784, 784])
@@ -96,15 +100,17 @@ def deepnn(x, _dropout):
     h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
     if _dropout:
         h_5 = tf.nn.dropout(h_5, keep_prob)
-    entropy_5 = compute_entropy_with_svd(W_5)
+    #entropy_5 = compute_entropy_with_svd(W_5)
+    jacobian = tf.matmul(W_5, jacobian)
 
     # output
     W_out = weight_variable([784, 10])
     b_out = bias_variable([10])
 
     y_out = tf.matmul(h_5, W_out) + b_out
-    entropy_all = (entropy_1 + entropy_2 + entropy_3 +
-                         entropy_4 + entropy_5)
+    #entropy_all = (entropy_1 + entropy_2 + entropy_3 +
+    #                     entropy_4 + entropy_5)
+    entropy_all = compute_entropy_with_svd(jacobian)
     return y_out, entropy_all, keep_prob
 
 
@@ -124,11 +130,11 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
     # since dA = dUSVt + UdSVt + USdVt
     # we can simply recompute each matrix using A = USVt
     # while blocking gradients to the original op.
-    _, M, N = A.get_shape().as_list()
+    M, N = A.get_shape().as_list()
     P = min(M, N)
     S0, U0, V0 = map(tf.stop_gradient, tf.svd(A, full_matrices=True, name=name))
     #Ui, Vti = map(tf.matrix_inverse, [U0, tf.transpose(V0, (0, 2, 1))])
-    Ui = tf.transpose(U0, (0, 2, 1))
+    Ui = tf.transpose(U0)
     Vti = V0
     # A = USVt
     # S = UiAVti
@@ -138,7 +144,8 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
 
 
 def compute_entropy_with_svd(jacobian):
-    s = self.svd(jacobian, compute_uv=False)
+    with tf.device('/cpu:0'):
+        s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
     s = tf.maximum(s, 0.1 ** 8)
     log_determine = tf.log(tf.abs(s))
