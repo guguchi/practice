@@ -41,7 +41,7 @@ import tensorflow as tf
 FLAGS = None
 
 
-def deepnn(x, _dropout):
+def deepnn(x):
     """deepnn builds the graph for a deep net for classifying digits.
     Args:
         x: an input tensor with the dimensions (N_examples, 784), where 784 is the
@@ -56,63 +56,38 @@ def deepnn(x, _dropout):
     # Last dimension is for "features" - there is only one here, since images are
     # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
     x_image = x
-    keep_prob = tf.placeholder(tf.float32)
 
     # 1 layer
     W_1 = weight_variable([784, 784])
     b_1 = bias_variable([784])
     h_1 = tf.nn.relu(tf.matmul(x_image, W_1) + b_1)
-    if _dropout:
-        h_1 = tf.nn.dropout(h_1, keep_prob)
 
     # 2 layer
     W_2 = weight_variable([784, 784])
     b_2 = bias_variable([784])
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
-    if _dropout:
-        h_2 = tf.nn.dropout(h_2, keep_prob)
 
     # 3 layer
     W_3 = weight_variable([784, 784])
     b_3 = bias_variable([784])
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
-    if _dropout:
-        h_3 = tf.nn.dropout(h_3, keep_prob)
 
     # 4 layer
     W_4 = weight_variable([784, 784])
     b_4 = bias_variable([784])
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
-    if _dropout:
-        h_4 = tf.nn.dropout(h_4, keep_prob)
 
     # 5 layer
     W_5 = weight_variable([784, 784])
     b_5 = bias_variable([784])
     h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
-    if _dropout:
-        h_5 = tf.nn.dropout(h_5, keep_prob)
-
-    # 6 layer
-    W_6 = weight_variable([784, 784])
-    b_6 = bias_variable([784])
-    h_6 = tf.nn.relu(tf.matmul(h_5, W_6) + b_6)
-    if _dropout:
-        h_6 = tf.nn.dropout(h_6, keep_prob)
-
-    # 7 layer
-    W_7 = weight_variable([784, 784])
-    b_7 = bias_variable([784])
-    h_7 = tf.nn.relu(tf.matmul(h_6, W_7) + b_7)
-    if _dropout:
-        h_7 = tf.nn.dropout(h_7, keep_prob)
 
     # output
     W_out = weight_variable([784, 10])
     b_out = bias_variable([10])
 
-    y_out = tf.matmul(h_7, W_out) + b_out
-    return y_out, keep_prob
+    y_out = tf.matmul(h_5, W_out) + b_out
+    return y_out
 
 
 def weight_variable(shape):
@@ -128,7 +103,6 @@ def bias_variable(shape):
 
 
 def main(_):
-    _dropout = True
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -139,12 +113,12 @@ def main(_):
     y_ = tf.placeholder(tf.float32, [None, 10])
 
     # Build the graph for the deep net
-    y_out, keep_prob = deepnn(x, _dropout)
+    y_out = deepnn(x)
 
     # objective
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_out))
-    train_step = tf.train.AdamOptimizer(0.0001).minimize(cross_entropy)
+    train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
 
     # evaluation
     correct_prediction = tf.equal(tf.argmax(y_out, 1), tf.argmax(y_, 1))
@@ -153,7 +127,7 @@ def main(_):
     test_accuracy_list = []
     train_accuracy_list = []
     cross_entropy_list = []
-    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/vanilla/'
+    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/vanilla/0630/'
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
@@ -166,26 +140,24 @@ def main(_):
             for i in range(20000):
                 batch = mnist.train.next_batch(50)
 
-                _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+                _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1]})
                 train_accuracy_list.append(train_accuracy)
                 cross_entropy_list.append(cross_entropy_curr)
 
                 if i % 100 == 0:
                     test_accuracy = accuracy.eval(feed_dict={
-                        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-                    #test_accuracy = accuracy.eval(feed_dict={
-                    #    x: batch[0], y_: batch[1], keep_prob: 1.0})
+                        x: mnist.test.images, y_: mnist.test.labels})
                     print('step %d, test accuracy %g' % (i, test_accuracy))
                     test_accuracy_list.append(test_accuracy)
 
             test_accuracy = accuracy.eval(feed_dict={
-                x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+                x: mnist.test.images, y_: mnist.test.labels})
             print('test accuracy %g' % test_accuracy)
             test_accuracy_list.append(test_accuracy)
 
-            np.save(save_data_path+'test_accuracy_vanilla_dropout_{}_{}.npy'.format(_dropout, _iter), test_accuracy_list)
-            np.save(save_data_path+'train_accuracy_vanilla_dropout_{}_{}.npy'.format(_dropout, _iter), train_accuracy_list)
-            np.save(save_data_path+'cross_entropy_vanilla_dropout_{}_{}.npy'.format(_dropout, _iter), cross_entropy_list)
+            np.save(save_data_path+'test_accuracy_vanilla_{}.npy'.format(_iter), test_accuracy_list)
+            np.save(save_data_path+'train_accuracy_vanilla_{}.npy'.format(_iter), train_accuracy_list)
+            np.save(save_data_path+'cross_entropy_vanilla_{}.npy'.format(_iter), cross_entropy_list)
 
 
 

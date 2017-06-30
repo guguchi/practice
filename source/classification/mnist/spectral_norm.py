@@ -41,7 +41,7 @@ import tensorflow as tf
 FLAGS = None
 
 
-def deepnn(x, _dropout, iteration):
+def deepnn(x, iteration):
     """deepnn builds the graph for a deep net for classifying digits.
     Args:
         x: an input tensor with the dimensions (N_examples, 784), where 784 is the
@@ -56,46 +56,35 @@ def deepnn(x, _dropout, iteration):
     # Last dimension is for "features" - there is only one here, since images are
     # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
     x_image = x
-    keep_prob = tf.placeholder(tf.float32)
 
     # 1 layer
     W_1 = weight_variable([784, 784])
     b_1 = bias_variable([784])
     h_1 = tf.nn.relu(tf.matmul(x_image, W_1) + b_1)
-    if _dropout:
-        h_1 = tf.nn.dropout(h_1, keep_prob)
     spectral_norm_1 = spectral_norm(W_1, iteration)
 
     # 2 layer
     W_2 = weight_variable([784, 784])
     b_2 = bias_variable([784])
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
-    if _dropout:
-        h_2 = tf.nn.dropout(h_2, keep_prob)
     spectral_norm_2 = spectral_norm(W_2, iteration)
 
     # 3 layer
     W_3 = weight_variable([784, 784])
     b_3 = bias_variable([784])
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
-    if _dropout:
-        h_3 = tf.nn.dropout(h_3, keep_prob)
     spectral_norm_3 = spectral_norm(W_3, iteration)
 
     # 4 layer
     W_4 = weight_variable([784, 784])
     b_4 = bias_variable([784])
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
-    if _dropout:
-        h_4 = tf.nn.dropout(h_4, keep_prob)
     spectral_norm_4 = spectral_norm(W_4, iteration)
 
     # 5 layer
     W_5 = weight_variable([784, 784])
     b_5 = bias_variable([784])
     h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
-    if _dropout:
-        h_5 = tf.nn.dropout(h_5, keep_prob)
     spectral_norm_5 = spectral_norm(W_5, iteration)
 
     # output
@@ -104,8 +93,8 @@ def deepnn(x, _dropout, iteration):
 
     y_out = tf.matmul(h_5, W_out) + b_out
     spectral_norm_all = (spectral_norm_1 + spectral_norm_2 + spectral_norm_3 +
-                         spectral_norm_4 + spectral_norm_5)
-    return y_out, spectral_norm_all, keep_prob
+                         spectral_norm_4 + spectral_norm_5) / 5.0
+    return y_out, spectral_norm_all
 
 
 def weight_variable(shape):
@@ -133,8 +122,7 @@ def spectral_norm(W, iteration):
     return sigma_2
 
 
-def main(_):
-    _dropout = False
+def main(_):s
     iteration = 3
     lam = 0.01
     # Import data
@@ -147,13 +135,13 @@ def main(_):
     y_ = tf.placeholder(tf.float32, [None, 10])
 
     # Build the graph for the deep net
-    y_out, spectral_norm_all, keep_prob = deepnn(x, _dropout, iteration)
+    y_out, spectral_norm_all = deepnn(x, iteration)
 
     # objective
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_out))
-    train_step = tf.train.AdamOptimizer(0.0001).minimize(cross_entropy +
-                                                         lam * spectral_norm_all)
+    train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy +
+                                                                  lam * spectral_norm_all)
 
     # evaluation
     correct_prediction = tf.equal(tf.argmax(y_out, 1), tf.argmax(y_, 1))
@@ -162,35 +150,38 @@ def main(_):
     test_accuracy_list = []
     train_accuracy_list = []
     cross_entropy_list = []
-    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/spectral_norm/'
+    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/spectral_norm/0630/'
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        for i in range(20000):
-            batch = mnist.train.next_batch(50)
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
-            _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-            train_accuracy_list.append(train_accuracy)
-            cross_entropy_list.append(cross_entropy_curr)
+    for _iter in range(10):
+        with tf.Session(config=config) as sess:
+            sess.run(tf.global_variables_initializer())
+            for i in range(20000):
+                batch = mnist.train.next_batch(50)
 
-            if i % 100 == 0:
-                test_accuracy = accuracy.eval(feed_dict={
-                    x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-                #test_accuracy = accuracy.eval(feed_dict={
-                #    x: batch[0], y_: batch[1], keep_prob: 1.0})
-                print('step %d, test accuracy %g' % (i, test_accuracy))
-                test_accuracy_list.append(test_accuracy)
+                _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1]})
+                train_accuracy_list.append(train_accuracy)
+                cross_entropy_list.append(cross_entropy_curr)
 
-        test_accuracy = accuracy.eval(feed_dict={
-            x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('test accuracy %g' % test_accuracy)
-        test_accuracy_list.append(test_accuracy)
+                if i % 100 == 0:
+                    test_accuracy = accuracy.eval(feed_dict={
+                        x: mnist.test.images, y_: mnist.test.labels})
+                    print('step %d, test accuracy %g' % (i, test_accuracy))
+                    test_accuracy_list.append(test_accuracy)
 
-        np.save(save_data_path+'test_accuracy_spectral_lam_{}.npy'.format(lam), test_accuracy_list)
-        np.save(save_data_path+'train_accuracy_spectral_lam_{}.npy'.format(lam), train_accuracy_list)
-        np.save(save_data_path+'cross_entropy_spectral_lam_{}.npy'.format(lam), cross_entropy_list)
+            test_accuracy = accuracy.eval(feed_dict={
+                x: mnist.test.images, y_: mnist.test.labels})
+            print('test accuracy %g' % test_accuracy)
+            test_accuracy_list.append(test_accuracy)
+
+            np.save(save_data_path+'test_accuracy_spectral_lam_{}_{}.npy'.format(lam, _iter), test_accuracy_list)
+            np.save(save_data_path+'train_accuracy_spectral_lam_{}_{}.npy'.format(lam, _iter), train_accuracy_list)
+            np.save(save_data_path+'cross_entropy_spectral_lam_{}_{}.npy'.format(lam, _iter), cross_entropy_list)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
