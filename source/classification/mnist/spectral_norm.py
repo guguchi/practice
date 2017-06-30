@@ -125,14 +125,18 @@ def spectral_norm(W, iteration):
     num_rows, num_cols = WW.get_shape().as_list()
     v = tf.truncated_normal([num_rows], stddev=0.1)
     for i in range(iteration):
-        u = tf.matmul(v, WW)
+        u = tf.matmul(WW, tf.reshape(v, [-1, 1]))
         u_norm = tf.norm(u)
         v = u / u_norm
-    sigma_2 = tf.matmul(u, tf.reshape(v, [-1, 1])) / tf.matmul(v, tf.reshape(v, [-1, 1]))
+    sigma_2 = tf.matmul(tf.reshape(v, [1, num_rows]), tf.matmul(WW, tf.reshape(v, [-1, 1]))) / tf.matmul(tf.reshape(v, [1, num_rows]), v)
+    #print sigma_2
     return sigma_2
 
 
-def main(_dropout, iteration, lam):
+def main(_):
+    _dropout = False
+    iteration = 3
+    lam = 0.01
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -158,7 +162,7 @@ def main(_dropout, iteration, lam):
     test_accuracy_list = []
     train_accuracy_list = []
     cross_entropy_list = []
-    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/vanilla/'
+    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/spectral_norm/'
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
@@ -194,7 +198,5 @@ if __name__ == '__main__':
                         default='/tmp/tensorflow/mnist/input_data',
                         help='Directory for storing input data')
     FLAGS, unparsed = parser.parse_known_args()
-    _dropout = True
-    iteration = 3
-    lam = 0.01
-    tf.app.run(main=main(_dropout, iteration, lam), argv=[sys.argv[0]] + unparsed)
+
+    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
