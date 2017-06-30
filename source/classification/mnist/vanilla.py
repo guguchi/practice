@@ -55,9 +55,8 @@ def deepnn(x, _dropout):
     # Reshape to use within a convolutional neural net.
     # Last dimension is for "features" - there is only one here, since images are
     # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
-    x_image = tf.reshape(x, [-1, 28, 28, 1])
-    if _dropout:
-        keep_prob = tf.placeholder(tf.float32)
+    x_image = x
+    keep_prob = tf.placeholder(tf.float32)
 
     # 1 layer
     W_1 = weight_variable([784, 784])
@@ -99,7 +98,7 @@ def deepnn(x, _dropout):
     b_out = bias_variable([10])
 
     y_out = tf.matmul(h_5, W_out) + b_out
-    return y_out
+    return y_out, keep_prob
 
 
 def weight_variable(shape):
@@ -125,7 +124,7 @@ def main(_dropout):
     y_ = tf.placeholder(tf.float32, [None, 10])
 
     # Build the graph for the deep net
-    y_out = deepnn(x, _dropout)
+    y_out, keep_prob = deepnn(x, _dropout)
 
     # objective
     cross_entropy = tf.reduce_mean(
@@ -157,7 +156,7 @@ def main(_dropout):
                     x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
                 #test_accuracy = accuracy.eval(feed_dict={
                 #    x: batch[0], y_: batch[1], keep_prob: 1.0})
-                print('step %d, training accuracy %g' % (i, test_accuracy))
+                print('step %d, test accuracy %g' % (i, test_accuracy))
                 test_accuracy_list.append(test_accuracy)
 
         test_accuracy = accuracy.eval(feed_dict={
@@ -175,6 +174,5 @@ if __name__ == '__main__':
                         default='/tmp/tensorflow/mnist/input_data',
                         help='Directory for storing input data')
     FLAGS, unparsed = parser.parse_known_args()
-    _dropout = False
-    main = main(_dropout)
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    _dropout = True
+    tf.app.run(main=main(_dropout), argv=[sys.argv[0]] + unparsed)
