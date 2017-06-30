@@ -81,3 +81,5 @@ target/
 *DS_Store
 DS_Store*
 *.DS_Store*
+
+*cifar-10-python
