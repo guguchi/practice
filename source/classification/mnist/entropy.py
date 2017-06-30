@@ -136,7 +136,7 @@ def compute_entropy_with_svd(jacobian):
 
 
 def main(_):
-    lam = 0.01
+    lam = 2.5
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -153,7 +153,7 @@ def main(_):
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_out))
     train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy -
-                                                                  am * entropy)
+                                                                  lam * entropy)
 
     # evaluation
     correct_prediction = tf.equal(tf.argmax(y_out, 1), tf.argmax(y_, 1))
@@ -167,10 +167,10 @@ def main(_):
         os.makedirs(save_data_path)
 
     config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.1
+    config.gpu_options.per_process_gpu_memory_fraction = 0.4
 
     for _iter in range(5):
-        with tf.Session(config=config) as sess:
+        with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(20000):
                 batch = mnist.train.next_batch(50)

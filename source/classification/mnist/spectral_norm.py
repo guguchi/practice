@@ -122,9 +122,9 @@ def spectral_norm(W, iteration):
     return sigma_2
 
 
-def main(_):s
+def main(_):
     iteration = 3
-    lam = 0.01
+    lam = 3.5
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
