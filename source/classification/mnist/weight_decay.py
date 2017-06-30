@@ -98,13 +98,29 @@ def deepnn(x, _dropout):
         h_5 = tf.nn.dropout(h_5, keep_prob)
     fro_norm_5 = fro_norm(W_5)
 
+    # 6 layer
+    W_6 = weight_variable([784, 784])
+    b_6 = bias_variable([784])
+    h_6 = tf.nn.relu(tf.matmul(h_5, W_6) + b_6)
+    if _dropout:
+        h_6 = tf.nn.dropout(h_6, keep_prob)
+    fro_norm_6 = fro_norm(W_6)
+
+    # 7 layer
+    W_7 = weight_variable([784, 784])
+    b_7 = bias_variable([784])
+    h_7 = tf.nn.relu(tf.matmul(h_6, W_7) + b_7)
+    if _dropout:
+        h_7 = tf.nn.dropout(h_7, keep_prob)
+    fro_norm_7 = fro_norm(W_7)
+
     # output
     W_out = weight_variable([784, 10])
     b_out = bias_variable([10])
 
-    y_out = tf.matmul(h_5, W_out) + b_out
+    y_out = tf.matmul(h_7, W_out) + b_out
     fro_norm_all = (fro_norm_1 + fro_norm_2 + fro_norm_3 +
-                         fro_norm_4 + fro_norm_5)
+                         fro_norm_4 + fro_norm_5 + fro_norm_6 + fro_norm_7) / 7.0
     return y_out, fro_norm_all, keep_prob
 
 
@@ -121,13 +137,13 @@ def bias_variable(shape):
 
 
 def fro_norm(W):
-    norm = tf.norm(W, ord='fro')
+    norm = tf.trace(tf.matmul(W, tf.transpose(W)))
     return norm
 
 
 def main(_):
     _dropout = False
-    lam = 0.01
+    lam = 0.0001
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -157,31 +173,36 @@ def main(_):
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        for i in range(20000):
-            batch = mnist.train.next_batch(50)
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.05
 
-            _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-            train_accuracy_list.append(train_accuracy)
-            cross_entropy_list.append(cross_entropy_curr)
+    for _ietr in range(10):
+        with tf.Session(config=config) as sess:
+            sess.run(tf.global_variables_initializer())
+            for i in range(20000):
+                batch = mnist.train.next_batch(50)
 
-            if i % 100 == 0:
-                test_accuracy = accuracy.eval(feed_dict={
-                    x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-                #test_accuracy = accuracy.eval(feed_dict={
-                #    x: batch[0], y_: batch[1], keep_prob: 1.0})
-                print('step %d, test accuracy %g' % (i, test_accuracy))
-                test_accuracy_list.append(test_accuracy)
+                _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+                train_accuracy_list.append(train_accuracy)
+                cross_entropy_list.append(cross_entropy_curr)
 
-        test_accuracy = accuracy.eval(feed_dict={
-            x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
-        print('test accuracy %g' % test_accuracy)
-        test_accuracy_list.append(test_accuracy)
+                if i % 100 == 0:
+                    test_accuracy = accuracy.eval(feed_dict={
+                        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+                    #test_accuracy = accuracy.eval(feed_dict={
+                    #    x: batch[0], y_: batch[1], keep_prob: 1.0})
+                    print('step %d, test accuracy %g' % (i, test_accuracy))
+                    test_accuracy_list.append(test_accuracy)
 
-        np.save(save_data_path+'test_accuracy_weight_lam_{}.npy'.format(lam), test_accuracy_list)
-        np.save(save_data_path+'train_accuracy_weight_lam_{}.npy'.format(lam), train_accuracy_list)
-        np.save(save_data_path+'cross_entropy_weight_lam_{}.npy'.format(lam), cross_entropy_list)
+            test_accuracy = accuracy.eval(feed_dict={
+                x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0})
+            print('test accuracy %g' % test_accuracy)
+            test_accuracy_list.append(test_accuracy)
+
+            np.save(save_data_path+'test_accuracy_weight_lam_{}_{}.npy'.format(lam, _iter), test_accuracy_list)
+            np.save(save_data_path+'train_accuracy_weight_lam_{}_{}.npy'.format(lam, _iter), train_accuracy_list)
+            np.save(save_data_path+'cross_entropy_weight_lam_{}_{}.npy'.format(lam, _iter), cross_entropy_list)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -190,4 +211,4 @@ if __name__ == '__main__':
                         help='Directory for storing input data')
     FLAGS, unparsed = parser.parse_known_args()
 
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    tf.app.run(main=main(_), argv=[sys.argv[0]] + unparsed)

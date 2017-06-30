@@ -64,8 +64,8 @@ def deepnn(x, _dropout):
     h_1 = tf.nn.relu(tf.matmul(x_image, W_1) + b_1)
     if _dropout:
         h_1 = tf.nn.dropout(h_1, keep_prob)
-    #entropy_1 = compute_entropy_with_svd(W_1)
-    jacobian = W_1
+    entropy_1 = compute_entropy_with_svd(W_1)
+    #jacobian = W_1
 
     # 2 layer
     W_2 = weight_variable([784, 784])
@@ -73,8 +73,8 @@ def deepnn(x, _dropout):
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     if _dropout:
         h_2 = tf.nn.dropout(h_2, keep_prob)
-    #entropy_2 = compute_entropy_with_svd(W_2)
-    jacobian = tf.matmul(W_2, jacobian)
+    entropy_2 = compute_entropy_with_svd(W_2)
+    #jacobian = tf.matmul(W_2, jacobian)
 
     # 3 layer
     W_3 = weight_variable([784, 784])
@@ -82,8 +82,8 @@ def deepnn(x, _dropout):
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     if _dropout:
         h_3 = tf.nn.dropout(h_3, keep_prob)
-    #entropy_3 = compute_entropy_with_svd(W_3)
-    jacobian = tf.matmul(W_3, jacobian)
+    entropy_3 = compute_entropy_with_svd(W_3)
+    #jacobian = tf.matmul(W_3, jacobian)
 
     # 4 layer
     W_4 = weight_variable([784, 784])
@@ -91,8 +91,8 @@ def deepnn(x, _dropout):
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     if _dropout:
         h_4 = tf.nn.dropout(h_4, keep_prob)
-    #entropy_4 = compute_entropy_with_svd(W_4)
-    jacobian = tf.matmul(W_4, jacobian)
+    entropy_4 = compute_entropy_with_svd(W_4)
+    #jacobian = tf.matmul(W_4, jacobian)
 
     # 5 layer
     W_5 = weight_variable([784, 784])
@@ -100,17 +100,17 @@ def deepnn(x, _dropout):
     h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
     if _dropout:
         h_5 = tf.nn.dropout(h_5, keep_prob)
-    #entropy_5 = compute_entropy_with_svd(W_5)
-    jacobian = tf.matmul(W_5, jacobian)
+    entropy_5 = compute_entropy_with_svd(W_5)
+    #jacobian = tf.matmul(W_5, jacobian)
 
     # output
     W_out = weight_variable([784, 10])
     b_out = bias_variable([10])
 
     y_out = tf.matmul(h_5, W_out) + b_out
-    #entropy_all = (entropy_1 + entropy_2 + entropy_3 +
-    #                     entropy_4 + entropy_5)
-    entropy_all = compute_entropy_with_svd(jacobian)
+    entropy_all = (entropy_1 + entropy_2 + entropy_3 +
+                         entropy_4 + entropy_5)
+    #entropy_all = compute_entropy_with_svd(jacobian)
     return y_out, entropy_all, keep_prob
 
 
@@ -207,9 +207,9 @@ def main(_):
         print('test accuracy %g' % test_accuracy)
         test_accuracy_list.append(test_accuracy)
 
-        np.save(save_data_path+'test_accuracy_entropy_lam_{}.npy'.format(lam), test_accuracy_list)
-        np.save(save_data_path+'train_accuracy_entropy_lam_{}.npy'.format(lam), train_accuracy_list)
-        np.save(save_data_path+'cross_entropy_entropy_lam_{}.npy'.format(lam), cross_entropy_list)
+        np.save(save_data_path+'test_accuracy_entropy_lam_{}_each.npy'.format(lam), test_accuracy_list)
+        np.save(save_data_path+'train_accuracy_entropy_lam_{}_each.npy'.format(lam), train_accuracy_list)
+        np.save(save_data_path+'cross_entropy_entropy_lam_{}_each.npy'.format(lam), cross_entropy_list)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
