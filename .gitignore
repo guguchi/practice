@@ -83,3 +83,7 @@ DS_Store*
 *.DS_Store*
 
 *cifar-10-python
+data_batch*
+batches.meta
+test_batch
+readme.html
