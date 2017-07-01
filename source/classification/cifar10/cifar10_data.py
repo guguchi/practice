@@ -3,8 +3,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
+import sys
+import tarfile
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
+from six.moves import urllib
 import tensorflow as tf
 
 import numpy as np
@@ -117,17 +121,9 @@ def _generate_image_and_label_batch(image, label, min_queue_examples,
 
     return images, tf.reshape(label_batch, [batch_size])
 
-
+"""
 def distorted_inputs(data_dir, batch_size):
-    """Construct distorted input for CIFAR training using the Reader ops.
-    Args:
-        data_dir: Path to the CIFAR-10 data directory.
-        batch_size: Number of images per batch.
-    Returns:
-        images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
-        labels: Labels. 1D tensor of [batch_size] size.
-    """
-    filenames = [os.path.join(data_dir, 'data_batch_%d' % i)
+    filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
                     for i in xrange(1, 6)]
     for f in filenames:
         if not tf.gfile.Exists(f):
@@ -139,29 +135,10 @@ def distorted_inputs(data_dir, batch_size):
     # Read examples from files in the filename queue.
     read_input = read_cifar10(filename_queue)
     reshaped_image = tf.cast(read_input.uint8image, tf.float32)
+    height = 32
+    width = 32
 
-    height = IMAGE_SIZE
-    width = IMAGE_SIZE
-
-    # Image processing for training the network. Note the many random
-    # distortions applied to the image.
-
-    # Randomly crop a [height, width] section of the image.
-    distorted_image = tf.random_crop(reshaped_image, [height, width, 3])
-
-    # Randomly flip the image horizontally.
-    distorted_image = tf.image.random_flip_left_right(distorted_image)
-
-    # Because these operations are not commutative, consider randomizing
-    # the order their operation.
-    # NOTE: since per_image_standardization zeros the mean and makes
-    # the stddev unit, this likely has no effect see tensorflow#1458.
-    distorted_image = tf.image.random_brightness(distorted_image,
-                                                    max_delta=63)
-    distorted_image = tf.image.random_contrast(distorted_image,
-                                                lower=0.2, upper=1.8)
-
-    distorted_image = tf.image.rgb_to_grayscale(distorted_image)
+    distorted_image = tf.image.rgb_to_grayscale(reshaped_image)
     print(distorted_image)
 
     # Subtract off the mean and divide by the variance of the pixels.
@@ -182,6 +159,71 @@ def distorted_inputs(data_dir, batch_size):
     return _generate_image_and_label_batch(float_image, read_input.label,
                                             min_queue_examples, batch_size,
                                             shuffle=True)
+"""
+
+def distorted_inputs(data_dir, batch_size):
+  """Construct distorted input for CIFAR training using the Reader ops.
+
+  Args:
+    data_dir: Path to the CIFAR-10 data directory.
+    batch_size: Number of images per batch.
+
+  Returns:
+    images: Images. 4D tensor of [batch_size, IMAGE_SIZE, IMAGE_SIZE, 3] size.
+    labels: Labels. 1D tensor of [batch_size] size.
+  """
+  filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
+               for i in xrange(1, 6)]
+  for f in filenames:
+    if not tf.gfile.Exists(f):
+      raise ValueError('Failed to find file: ' + f)
+
+  # Create a queue that produces the filenames to read.
+  filename_queue = tf.train.string_input_producer(filenames)
+
+  # Read examples from files in the filename queue.
+  read_input = read_cifar10(filename_queue)
+  reshaped_image = tf.cast(read_input.uint8image, tf.float32)
+
+  height = IMAGE_SIZE
+  width = IMAGE_SIZE
+
+  # Image processing for training the network. Note the many random
+  # distortions applied to the image.
+
+  # Randomly crop a [height, width] section of the image.
+  distorted_image = tf.random_crop(reshaped_image, [height, width, 3])
+
+  # Randomly flip the image horizontally.
+  distorted_image = tf.image.random_flip_left_right(distorted_image)
+
+  # Because these operations are not commutative, consider randomizing
+  # the order their operation.
+  # NOTE: since per_image_standardization zeros the mean and makes
+  # the stddev unit, this likely has no effect see tensorflow#1458.
+  distorted_image = tf.image.random_brightness(distorted_image,
+                                               max_delta=63)
+  distorted_image = tf.image.random_contrast(distorted_image,
+                                             lower=0.2, upper=1.8)
+
+  # Subtract off the mean and divide by the variance of the pixels.
+  float_image = tf.image.per_image_standardization(distorted_image)
+
+  # Set the shapes of tensors.
+  float_image.set_shape([height, width, 3])
+  read_input.label.set_shape([1])
+
+  # Ensure that the random shuffling has good mixing properties.
+  min_fraction_of_examples_in_queue = 0.4
+  min_queue_examples = int(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN *
+                           min_fraction_of_examples_in_queue)
+  print ('Filling queue with %d CIFAR images before starting to train. '
+         'This will take a few minutes.' % min_queue_examples)
+
+  # Generate a batch of images and labels by building up a queue of examples.
+  return _generate_image_and_label_batch(float_image, read_input.label,
+                                         min_queue_examples, batch_size,
+                                         shuffle=True)
 
 
 def inputs(eval_data, data_dir, batch_size):
@@ -238,18 +280,49 @@ def inputs(eval_data, data_dir, batch_size):
                                             min_queue_examples, batch_size,
                                             shuffle=False)
 
+def maybe_download_and_extract(data_dir):
+    """Download and extract the tarball from Alex's website."""
+    dest_directory = data_dir
+    if not os.path.exists(dest_directory):
+        os.makedirs(dest_directory)
+    DATA_URL = 'http://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz'
+    filename = DATA_URL.split('/')[-1]
+    filepath = os.path.join(dest_directory, filename)
+    if not os.path.exists(filepath):
+        def _progress(count, block_size, total_size):
+            sys.stdout.write('\r>> Downloading %s %.1f%%' % (filename,
+                float(count * block_size) / float(total_size) * 100.0))
+            sys.stdout.flush()
+        filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
+        print()
+        statinfo = os.stat(filepath)
+        print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+    extracted_dir_path = os.path.join(dest_directory, 'cifar-10-batches-bin')
+    if not os.path.exists(extracted_dir_path):
+        tarfile.open(filepath, 'r:gz').extractall(dest_directory)
+
 
 if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
 
-    data_dir = ''
+    data_dir = '/home/ishii/Desktop/research/practice/data'
     batch_size = 5
+    maybe_download_and_extract(data_dir)
 
-    sess = tf.Session()
-    A = sess.run([distorted_inputs(data_dir, batch_size)])
+    with tf.Graph().as_default():
+        global_step = tf.contrib.framework.get_or_create_global_step()
 
-    A = np.reshape(A, (batch_size, IMAGE_SIZE, IMAGE_SIZE))
+    with tf.Session() as sess:
+
+        for i in range(10):
+            with tf.device('/cpu:0'):
+                images, labels = distorted_inputs(data_dir=data_dir + '/cifar-10-batches-bin', batch_size=batch_size)
+            A = tf.reduce_sum(images)
+            AAA = sess.run([A])
+            print(AAA)
+    """
+    A = np.reshape(A, (batch_size, 32, 32))
     plt.subplot(151)
     plt.imshow(A[0], interpolation='nearest')
     plt.subplot(152)
@@ -261,3 +334,4 @@ if __name__ == '__main__':
     plt.subplot(155)
     plt.imshow(A[4], interpolation='nearest')
     plt.show()
+    """
