@@ -115,7 +115,7 @@ def fro_norm(W):
 
 
 def main(_):
-    lam = 0.0001
+    lam = 0.01
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -148,7 +148,7 @@ def main(_):
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
-    for _ietr in range(10):
+    for _iter in range(10):
         with tf.Session(config=config) as sess:
             sess.run(tf.global_variables_initializer())
             for i in range(20000):
@@ -156,7 +156,7 @@ def main(_):
 
                 _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1]})
                 train_accuracy_list.append(train_accuracy)
-                cross_entropy_list.append(cross_entropy_curr)
+                cross_entropy_list.append(cross_entropy_curr))
 
                 if i % 100 == 0:
                     test_accuracy = accuracy.eval(feed_dict={
@@ -181,4 +181,4 @@ if __name__ == '__main__':
                         help='Directory for storing input data')
     FLAGS, unparsed = parser.parse_known_args()
 
-    tf.app.run(main=main(_), argv=[sys.argv[0]] + unparsed)
+    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

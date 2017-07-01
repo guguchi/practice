@@ -168,7 +168,7 @@ def main(_):
         os.makedirs(save_data_path)
 
     config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = 0.1
+    config.gpu_options.per_process_gpu_memory_fraction = 0.2
 
     for _iter in range(5):
         with tf.Session(config=config) as sess:

@@ -109,7 +109,7 @@ def bias_variable(shape):
 
 
 def main(_):
-    _dropout = 0.5
+    _dropout = 0.75
     # Import data
     mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
