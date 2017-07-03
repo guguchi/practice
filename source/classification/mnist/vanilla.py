@@ -127,7 +127,7 @@ def main(_):
     test_accuracy_list = []
     train_accuracy_list = []
     cross_entropy_list = []
-    save_data_path = '/home/ishii/Desktop/research/practice/data/classification/vanilla/0630/'
+    save_data_path = './vanilla/'#'/home/ishii/Desktop/research/practice/data/classification/vanilla/0630/'
     if not os.path.exists(save_data_path):
         os.makedirs(save_data_path)
 
@@ -143,6 +143,7 @@ def main(_):
                 _, cross_entropy_curr, train_accuracy = sess.run([train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1]})
                 train_accuracy_list.append(train_accuracy)
                 cross_entropy_list.append(cross_entropy_curr)
+                print(train_accuracy)
 
                 if i % 100 == 0:
                     test_accuracy = accuracy.eval(feed_dict={
