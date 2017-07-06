@@ -9,17 +9,18 @@ import tensorflow as tf
 from cifar10_data import *
 from tensorflow.examples.tutorials.mnist import input_data
 
+
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('lam', 0.01, "正則化")
-tf.app.flags.DEFINE_float('learning_rate', 0.001, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 10, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 50000, "学習数")
-tf.app.flags.DEFINE_integer('batch_size', 128, "バッチサイズ")
+tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
+tf.app.flags.DEFINE_integer('iteration', 5, "学習反復回数")
+tf.app.flags.DEFINE_integer('step', 100000, "学習数")
+tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
 tf.app.flags.DEFINE_integer('test_batch_size', 1000, "テストバッチサイズ")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_integer('test_example', 10000, "テストデータ数")
 tf.app.flags.DEFINE_string('cifar_data_dir', './../../../data/', "cifar10保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../data/classification/cifar10/weight_decay/0702/', "データ保存先")
+tf.app.flags.DEFINE_string('save_data_path', './../../../data/classification/cifar10/weight_decay/0704/', "データ保存先")
 
 
 def deepnn(x):
@@ -96,10 +97,10 @@ def fro_norm(W):
 def main(argv):
     # data preparation
     maybe_download_and_extract(FLAGS.cifar_data_dir)
-    num_iter = int(math.ceil(FLAGS.test_example / FLAGS.batch_size))
+    num_iter = 10.0#int(math.ceil(FLAGS.test_example / FLAGS.test_batch_size))
 
     # data load
-    train_images, trains_labels = train_input(FLAGS.cifar_data_dir + 'cifar-10-batches-bin/',
+    train_images_batch, trains_labels_batch = train_input(FLAGS.cifar_data_dir + 'cifar-10-batches-bin/',
                                               FLAGS.batch_size)
     test_images, test_labels = test_input(FLAGS.cifar_data_dir + 'cifar-10-batches-bin/',
                                           FLAGS.test_batch_size)
@@ -123,21 +124,30 @@ def main(argv):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # save data
+    train_accuracy_list_batch = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     train_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     test_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'lam_{}_batch_{}_alpha_{}/'.format(
         FLAGS.lam, FLAGS.batch_size, FLAGS.learning_rate)
-    if not os.path.exists(FLAGS.save_data_path):
-        os.makedirs(FLAGS.save_data_path)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
-    config = tf.ConfigProto()
-    config.gpu_options.per_process_gpu_memory_fraction = FLAGS.gpu_memory
+    config = tf.ConfigProto(
+             gpu_options=tf.GPUOptions(
+             per_process_gpu_memory_fraction=FLAGS.gpu_memory # 最大値の50%まで
+             )
+    )
+    config_cpu = tf.ConfigProto(
+        device_count = {'GPU': 0}
+    )
 
-    sess_train_example = tf.Session()
-    tf.train.start_queue_runners(sess=sess_train_example)
-    sess_test_example = tf.Session()
+    sess_train_example_batch = tf.Session(config=config_cpu)
+    tf.train.start_queue_runners(sess=sess_train_example_batch)
+    #sess_train_example = tf.Session(config=config_cpu)
+    #tf.train.start_queue_runners(sess=sess_train_example)
+    sess_test_example = tf.Session(config=config_cpu)
     tf.train.start_queue_runners(sess=sess_test_example)
 
     for _iter in range(FLAGS.iteration):
@@ -148,18 +158,30 @@ def main(argv):
 
             for i in range(FLAGS.step):
 
-                _train_images, _trains_labels = sess_train_example.run([train_images, trains_labels])
+                _train_images_batch, _trains_labels_batch = sess_train_example_batch.run([train_images_batch, trains_labels_batch])
 
-                _, cross_entropy_curr, train_accuracy = sess.run(
+                _, cross_entropy_curr, train_accuracy_batch = sess.run(
                     [train_step, cross_entropy, accuracy],
-                    feed_dict={x: _train_images, y_: _trains_labels})
+                    feed_dict={x: _train_images_batch, y_: _trains_labels_batch})
 
-                train_accuracy_list[_iter][i] = train_accuracy
+                train_accuracy_list_batch[_iter][i] = train_accuracy_batch
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
-                print 'step {}, train accuracy {}'.format(i, train_accuracy)
+                if i % 5000 == 0 or i == FLAGS.step - 1:
+                    """
+                    true_train_accuracy = 0.0
+                    _step = 0
+                    while _step < num_iter:
+                        _train_images, _trains_labels = sess_train_example.run([train_images, train_labels])
 
-                if i % 500 == 0 or i == FLAGS.step - 1:
+                        train_accuracy = accuracy.eval(feed_dict={
+                            x: _train_images, y_: _trains_labels})
+                        true_train_accuracy += train_accuracy
+                        _step += 1
+                    true_train_accuracy = true_train_accuracy / num_iter
+                    print('step %d, test accuracy %g' % (i, true_train_accuracy))
+                    train_accuracy_list[_iter][i] = true_train_accuracy
+                    """
                     true_test_accuracy = 0.0
                     _step = 0
                     while _step < num_iter:
@@ -172,11 +194,13 @@ def main(argv):
                     true_test_accuracy = true_test_accuracy / num_iter
                     print('step %d, test accuracy %g' % (i, true_test_accuracy))
                     test_accuracy_list[_iter][i] = true_test_accuracy
+                    print '---------------------'
 
 
-    np.save(FLAGS.save_data_path+'train_accuracy.npy', train_accuracy_list)
-    np.save(FLAGS.save_data_path+'test_accuracy.npy', test_accuracy_list)
-    np.save(FLAGS.save_data_path+'cross_entropy.npy', cross_entropy_list)
+    #np.save(save_path+'train_accuracy.npy', train_accuracy_list)
+    np.save(save_path+'train_accuracy_batch.npy', train_accuracy_list_batch)
+    np.save(save_path+'test_accuracy.npy', test_accuracy_list)
+    np.save(save_path+'cross_entropy.npy', cross_entropy_list)
 
 
 if __name__ == '__main__':
