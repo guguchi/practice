@@ -17,17 +17,17 @@ tf.app.flags.DEFINE_integer('step', 250000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
-tf.app.flags.DEFINE_string('data_dir', './../../../data/mnist/', "mnist保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../data/classification/mnist/layer_cahnge/', "データ保存先")
+tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
+tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
 
 
 def deepnn(x):
     # 1 layer
     W_1 = weight_variable([28*28, 28*28])
     b_1 = bias_variable([28*28])
-    h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
+    h_1 = tf.nn.relu(tf.matmul(x, W_1) + b_1)
     jacobian = W_1
-
+    """
     if FLAGS.layer_size == 1:
         # output
         W_out = weight_variable([28*28, 10])
@@ -36,13 +36,13 @@ def deepnn(x):
         y_out = tf.matmul(h_1, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_1
-
+    """
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
-    h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
+    h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     jacobian = tf.matmul(W_2, jacobian)
-
+    """
     if FLAGS.layer_size == 2:
         # output
         W_out = weight_variable([28*28, 10])
@@ -51,13 +51,13 @@ def deepnn(x):
         y_out = tf.matmul(h_2, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_2
-
+    """
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
     b_3 = bias_variable([28*28])
-    h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
+    h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     jacobian = tf.matmul(W_3, jacobian)
-
+    """
     if FLAGS.layer_size == 3:
         # output
         W_out = weight_variable([28*28, 10])
@@ -66,13 +66,13 @@ def deepnn(x):
         y_out = tf.matmul(h_3, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_3
-
+        """
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
-    h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
+    h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     jacobian = tf.matmul(W_4, jacobian)
-
+    """
     if FLAGS.layer_size == 4:
         # output
         W_out = weight_variable([28*28, 10])
@@ -81,11 +81,11 @@ def deepnn(x):
         y_out = tf.matmul(h_4, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_4
-
+        """
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
     b_5 = bias_variable([28*28])
-    h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
+    h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
     jacobian = tf.matmul(W_5, jacobian)
 
     # output
@@ -187,7 +187,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
-    save_path = FLAGS.save_data_path + 'sigmoid_layer_{}_batch_{}_alpha_{}/'.format(
+    save_path = FLAGS.save_data_path + 'relu_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -241,6 +241,7 @@ def main(argv):
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)
     np.save(save_path+'cross_entropy.npy', cross_entropy_list)
     np.save(save_path+'entropy.npy', entropy_list)
+
 
 
 if __name__ == '__main__':
