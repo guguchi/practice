@@ -159,9 +159,10 @@ def test_input(data_dir, batch_size):
                            min_fraction_of_examples_in_queue)
 
     # Generate a batch of images and labels by building up a queue of examples.
+    # shuffle : False
     return _generate_image_and_label_batch(float_image, read_input.label,
                                             min_queue_examples, batch_size,
-                                            shuffle=False)
+                                            shuffle=True)
 
 """
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 200000, "学習数")
+tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
@@ -154,9 +154,10 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
 def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
-    #if self.layer_method == "each":
-    s = tf.maximum(s, 0.1 ** 8)
-    log_determine = tf.log(tf.abs(s))
+    #s = tf.maximum(s, 0.1 ** 8)
+    s_index = len(np.where(s == 0.0)[0])
+    s = tf.maximum(tf.abs(s), 0.1 ** 8)
+    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
     entropy = tf.reduce_mean(log_determine)
     return entropy
 
@@ -212,6 +213,7 @@ def main(argv):
     test_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
+    entropy_train_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'sigmoid_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -234,11 +236,12 @@ def main(argv):
 
                 batch = mnist.train.next_batch(FLAGS.batch_size)
 
-                _, cross_entropy_curr, train_accuracy = sess.run([
-                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
+                _, cross_entropy_curr, train_accuracy, train_entropy = sess.run([
+                    train_step, cross_entropy, accuracy, entropy_all], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
+                entropy_train_list[_iter][i] = train_entropy
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
 
@@ -276,6 +279,7 @@ def main(argv):
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)
     np.save(save_path+'cross_entropy.npy', cross_entropy_list)
     np.save(save_path+'entropy.npy', entropy_list)
+    np.save(save_path+'entropy_train.npy', entropy_train_list)
 
 
 if __name__ == '__main__':
