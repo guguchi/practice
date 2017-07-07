@@ -3,7 +3,8 @@ import argparse
 import sys
 import os
 import math
-
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import numpy as np
 import tensorflow as tf
 from cifar10_data import *
@@ -237,20 +238,20 @@ def main(argv):
                     true_test_accuracy = true_test_accuracy / num_iter
                     test_accuracy_list[_iter][i] = true_test_accuracy
 
-                    _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
+                    #_test_images, _test_labels = sess_test_example.run([test_images, test_labels])
 
-                    entropy_curr, layer_samples = entropy_all.eval( feed_dict={
-                        x: _test_images, y_: _test_labels})
+                    entropy_curr = entropy_all.eval(feed_dict={
+                        x: _test_images})
 
                     entropy_list[_iter][i] = entropy_curr
-
+                    #entropy_curr = 1.0
                     print('step %d, test accuracy %g, entropy %g' % (i, true_test_accuracy, entropy_curr))
                     print '---------------------'
 
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
 
-                    layer_samples = sess.run([h_5],
+                    layer_samples = sess.run([h_7],
                                   feed_dict={x: _test_images[:18]})
                     fig = plot(_test_images[:18], layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
