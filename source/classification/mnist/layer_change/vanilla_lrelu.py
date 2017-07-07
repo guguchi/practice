@@ -17,21 +17,22 @@ tf.app.flags.DEFINE_integer('step', 200000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
-tf.app.flags.DEFINE_float('gpu_memory', 0.15, "gpuメモリ使用割合")
+tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
 tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
 
 
-def deepnn(x):
+def deepnn(x, phase_train):
     # 1 layer
     W_1 = weight_variable([28*28, 28*28])
     b_1 = bias_variable([28*28])
     h_1 = lrelu(tf.matmul(x, W_1) + b_1)
 
-    h_j_1 = tf.Variable(tf.reshape(tf.ones_like(h_1), [-1]))
-    h_j_1 = tf.scatter_update(h_j_1, tf.where(h_1 < 0.0), -0.2 * tf.ones_like(tf.where(h_1 < 0.0)))
-    x, y = h_j_1.get_shape().to_list()
-    jacobian = tf.reshape(h_j_1, [x, 1, y]) * W_1
+    x, y = h_1.get_shape()
+    h_j_1 = tf.Variable(tf.ones([100*28*28]))
+    h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
+    h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
+    jacobian = tf.reshape(h_j_1, [tf.shape(h_1)[0], 1, tf.shape(h_1)[1]]) * W_1
 
     if FLAGS.layer_size == 1:
         # output
@@ -47,10 +48,11 @@ def deepnn(x):
     b_2 = bias_variable([28*28])
     h_2 = lrelu(tf.matmul(h_1, W_2) + b_2)
 
-    h_j_2 = tf.Variable(tf.reshape(tf.ones_like(h_2), [-1]))
-    h_j_2 = tf.scatter_update(h_j_2, tf.where(h_2 < 0.0), -0.2 * tf.ones_like(tf.where(h_2 < 0.0)))
-    x, y = h_j_2.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_2, [x, 1, y]) * W_2, jacobian)
+    x, y = h_2.get_shape()
+    h_j_2 = tf.Variable(tf.ones([100*28*28]))
+    h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
+    h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_2, [tf.shape(h_2)[0], 1, tf.shape(h_2)[1]]) * W_2, jacobian)
 
     if FLAGS.layer_size == 2:
         # output
@@ -66,10 +68,11 @@ def deepnn(x):
     b_3 = bias_variable([28*28])
     h_3 = lrelu(tf.matmul(h_2, W_3) + b_3)
 
-    h_j_3 = tf.Variable(tf.reshape(tf.ones_like(h_3), [-1]))
-    h_j_3 = tf.scatter_update(h_j_3, tf.where(h_3 < 0.0), -0.2 * tf.ones_like(tf.where(h_3 < 0.0)))
-    x, y = h_j_3.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_3, [x, 1, y]) * W_3, jacobian)
+    x, y = h_3.get_shape()
+    h_j_3 = tf.Variable(tf.ones([100*28*28]))
+    h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
+    h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_3, [tf.shape(h_3)[0], 1, tf.shape(h_3)[1]]) * W_3, jacobian)
 
     if FLAGS.layer_size == 3:
         # output
@@ -85,10 +88,11 @@ def deepnn(x):
     b_4 = bias_variable([28*28])
     h_4 = lrelu(tf.matmul(h_3, W_4) + b_4)
 
-    h_j_4 = tf.Variable(tf.reshape(tf.ones_like(h_4), [-1]))
-    h_j_4 = tf.scatter_update(h_j_4, tf.where(h_4 < 0.0), -0.2 * tf.ones_like(tf.where(h_4 < 0.0)))
-    x, y = h_j_4.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_4, [x, 1, y]) * W_4, jacobian)
+    x, y = h_4.get_shape()
+    h_j_4 = tf.Variable(tf.ones([100*28*28]))
+    h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
+    h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_4, [tf.shape(h_4)[0], 1, tf.shape(h_4)[1]]) * W_4, jacobian)
 
     if FLAGS.layer_size == 4:
         # output
@@ -104,10 +108,11 @@ def deepnn(x):
     b_5 = bias_variable([28*28])
     h_5 = lrelu(tf.matmul(h_4, W_5) + b_5)
 
-    h_j_5 = tf.Variable(tf.reshape(tf.ones_like(h_5), [-1]))
-    h_j_5 = tf.scatter_update(h_j_5, tf.where(h_5 < 0.0), -0.2 * tf.ones_like(tf.where(h_5 < 0.0)))
-    x, y = h_j_5.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_5, [x, 1, y]) * W_5, jacobian)
+    x, y = h_5.get_shape()
+    h_j_5 = tf.Variable(tf.ones([100*28*28]))
+    h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
+    h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_5, [tf.shape(h_5)[0], 1, tf.shape(h_5)[1]]) * W_5, jacobian)
 
     if FLAGS.layer_size == 5:
         # output
@@ -123,10 +128,11 @@ def deepnn(x):
     b_6 = bias_variable([28*28])
     h_6 = lrelu(tf.matmul(h_5, W_6) + b_6)
 
-    h_j_6 = tf.Variable(tf.reshape(tf.ones_like(h_6), [-1]))
-    h_j_6 = tf.scatter_update(h_j_6, tf.where(h_6 < 0.0), -0.2 * tf.ones_like(tf.where(h_6 < 0.0)))
-    x, y = h_j_6.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_6, [x, 1, y]) * W_6, jacobian)
+    x, y = h_6.get_shape()
+    h_j_6 = tf.Variable(tf.ones([100*28*28]))
+    h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
+    h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_6, [tf.shape(h_6)[0], 1, tf.shape(h_6)[1]]) * W_6, jacobian)
 
     if FLAGS.layer_size == 6:
         # output
@@ -142,10 +148,11 @@ def deepnn(x):
     b_7 = bias_variable([28*28])
     h_7 = lrelu(tf.matmul(h_6, W_7) + b_7)
 
-    h_j_7 = tf.Variable(tf.reshape(tf.ones_like(h_7), [-1]))
-    h_j_7 = tf.scatter_update(h_j_7, tf.where(h_7 < 0.0), -0.2 * tf.ones_like(tf.where(h_7 < 0.0)))
-    x, y = h_j_7.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape(h_j_7, [x, 1, y]) * W_7, jacobian)
+    x, y = h_7.get_shape()
+    h_j_7 = tf.Variable(tf.ones([100*28*28]))
+    h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
+    h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
+    jacobian = tf.matmul(tf.reshape(h_j_7, [tf.shape(h_7)[0], 1, tf.shape(h_7)[1]]) * W_7, jacobian)
 
     # output
     W_out = weight_variable([28*28, 10])
@@ -245,7 +252,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
-    save_path = FLAGS.save_data_path + 'sigmoid_layer_{}_batch_{}_alpha_{}/'.format(
+    save_path = FLAGS.save_data_path + 'lrelu_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
     if not os.path.exists(save_path):
         os.makedirs(save_path)

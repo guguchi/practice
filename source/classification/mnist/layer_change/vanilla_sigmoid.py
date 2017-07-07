@@ -11,9 +11,9 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 5, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 500000, "学習数")
+tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
+tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
+tf.app.flags.DEFINE_integer('step', 200000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
@@ -27,8 +27,7 @@ def deepnn(x, phase_train):
     W_1 = weight_variable([28*28, 28*28])
     b_1 = bias_variable([28*28])
     h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
-    x, y = h_1.get_shape().to_list()
-    jacobian = tf.reshape((1.0 - h_1) * h_1, [x, 1, y]) * W_1
+    jacobian = tf.reshape((1.0 - h_1) * h_1, [tf.shape(h_1)[0], 1, tf.shape(h_1)[1]]) * W_1
 
     if FLAGS.layer_size == 1:
         # output
@@ -43,8 +42,7 @@ def deepnn(x, phase_train):
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
     h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
-    x, y = h_2.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [x, 1, y]) * W_2, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [tf.shape(h_2)[0], 1, tf.shape(h_2)[1]]) * W_2, jacobian)
 
     if FLAGS.layer_size == 2:
         # output
@@ -59,8 +57,7 @@ def deepnn(x, phase_train):
     W_3 = weight_variable([28*28, 28*28])
     b_3 = bias_variable([28*28])
     h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
-    x, y = h_3.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [x, 1, y]) * W_3, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [tf.shape(h_3)[0], 1, tf.shape(h_3)[1]]) * W_3, jacobian)
 
     if FLAGS.layer_size == 3:
         # output
@@ -75,8 +72,7 @@ def deepnn(x, phase_train):
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
     h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
-    x, y = h_4.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [x, 1, y]) * W_4, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [tf.shape(h_4)[0], 1, tf.shape(h_4)[1]]) * W_4, jacobian)
 
     if FLAGS.layer_size == 4:
         # output
@@ -91,8 +87,7 @@ def deepnn(x, phase_train):
     W_5 = weight_variable([28*28, 28*28])
     b_5 = bias_variable([28*28])
     h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
-    x, y = h_5.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [x, 1, y]) * W_5, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [tf.shape(h_5)[0], 1, tf.shape(h_5)[1]]) * W_5, jacobian)
 
     if FLAGS.layer_size == 5:
         # output
@@ -107,8 +102,7 @@ def deepnn(x, phase_train):
     W_6 = weight_variable([28*28, 28*28])
     b_6 = bias_variable([28*28])
     h_6 = tf.nn.sigmoid(tf.matmul(h_5, W_6) + b_6)
-    x, y = h_6.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_6) * h_6, [x, 1, y]) * W_6, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_6) * h_6, [tf.shape(h_6)[0], 1, tf.shape(h_6)[1]]) * W_6, jacobian)
 
     if FLAGS.layer_size == 6:
         # output
@@ -123,8 +117,7 @@ def deepnn(x, phase_train):
     W_7 = weight_variable([28*28, 28*28])
     b_7 = bias_variable([28*28])
     h_7 = tf.nn.sigmoid(tf.matmul(h_6, W_7) + b_7)
-    x, y = h_7.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_7) * h_7, [x, 1, y]) * W_7, jacobian)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_7) * h_7, [tf.shape(h_7)[0], 1, tf.shape(h_7)[1]]) * W_7, jacobian)
 
     # output
     W_out = weight_variable([28*28, 10])
