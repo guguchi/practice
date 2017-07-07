@@ -24,32 +24,32 @@ def deepnn(x):
     # 1 layer
     W_1 = weight_variable([28*28, 28*28])
     b_1 = bias_variable([28*28])
-    h_1 = tf.nn.relu(tf.matmul(x, W_1) + b_1)
-    jacobian = W_1
+    h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
+    jacobian = tf.reshape((1.0 - h_1) * h_1, [FLAGS.batch_size, 1, 28*28) * W_1
 
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
-    h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
-    jacobian = tf.matmul(W_2, jacobian)
+    h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [FLAGS.batch_size, 1, 28*28) * W_2, jacobian)
 
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
     b_3 = bias_variable([28*28])
-    h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
-    jacobian = tf.matmul(W_3, jacobian)
+    h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [FLAGS.batch_size, 1, 28*28) * W_3, jacobian)
 
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
-    h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
-    jacobian = tf.matmul(W_4, jacobian)
+    h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [FLAGS.batch_size, 1, 28*28) * W_4, jacobian)
 
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
     b_5 = bias_variable([28*28])
-    h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
-    jacobian = tf.matmul(W_5, jacobian)
+    h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [FLAGS.batch_size, 1, 28*28) * W_5, jacobian)
 
     # output
     W_out = weight_variable([28*28, 10])
@@ -150,7 +150,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
-    save_path = FLAGS.save_data_path + 'relu_batch_{}_alpha_{}/'.format(FLAGS.batch_size, FLAGS.learning_rate)
+    save_path = FLAGS.save_data_path + 'sigmoid_batch_{}_alpha_{}/'.format(FLAGS.batch_size, FLAGS.learning_rate)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
