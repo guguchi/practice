@@ -12,7 +12,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 10, "学習反復回数")
+tf.app.flags.DEFINE_integer('iteration', 5, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")

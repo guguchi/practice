@@ -27,7 +27,7 @@ def deepnn(x):
     b_1 = bias_variable([28*28])
     h_1 = tf.nn.relu(tf.matmul(x, W_1) + b_1)
     jacobian = W_1
-    """
+
     if FLAGS.layer_size == 1:
         # output
         W_out = weight_variable([28*28, 10])
@@ -36,13 +36,13 @@ def deepnn(x):
         y_out = tf.matmul(h_1, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_1
-    """
+
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     jacobian = tf.matmul(W_2, jacobian)
-    """
+
     if FLAGS.layer_size == 2:
         # output
         W_out = weight_variable([28*28, 10])
@@ -51,13 +51,13 @@ def deepnn(x):
         y_out = tf.matmul(h_2, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_2
-    """
+
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
     b_3 = bias_variable([28*28])
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     jacobian = tf.matmul(W_3, jacobian)
-    """
+
     if FLAGS.layer_size == 3:
         # output
         W_out = weight_variable([28*28, 10])
@@ -66,13 +66,13 @@ def deepnn(x):
         y_out = tf.matmul(h_3, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_3
-        """
+
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     jacobian = tf.matmul(W_4, jacobian)
-    """
+
     if FLAGS.layer_size == 4:
         # output
         W_out = weight_variable([28*28, 10])
@@ -81,7 +81,7 @@ def deepnn(x):
         y_out = tf.matmul(h_4, W_out) + b_out
         entropy_all = compute_entropy_with_svd(jacobian)
         return y_out, entropy_all, h_4
-        """
+        
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
     b_5 = bias_variable([28*28])
