@@ -22,13 +22,16 @@ tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存
 tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
 
 
-def deepnn(x, phase_train):
+def deepnn(x):
     # 1 layer
     W_1 = weight_variable([28*28, 28*28])
     b_1 = bias_variable([28*28])
-    h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
-    x, y = h_1.get_shape().to_list()
-    jacobian = tf.reshape((1.0 - h_1) * h_1, [x, 1, y]) * W_1
+    h_1 = lrelu(tf.matmul(x, W_1) + b_1)
+
+    h_j_1 = tf.Variable(tf.reshape(tf.ones_like(h_1), [-1]))
+    h_j_1 = tf.scatter_update(h_j_1, tf.where(h_1 < 0.0), -0.2 * tf.ones_like(tf.where(h_1 < 0.0)))
+    x, y = h_j_1.get_shape().to_list()
+    jacobian = tf.reshape(h_j_1, [x, 1, y]) * W_1
 
     if FLAGS.layer_size == 1:
         # output
@@ -42,9 +45,12 @@ def deepnn(x, phase_train):
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
-    h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
-    x, y = h_2.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [x, 1, y]) * W_2, jacobian)
+    h_2 = lrelu(tf.matmul(h_1, W_2) + b_2)
+
+    h_j_2 = tf.Variable(tf.reshape(tf.ones_like(h_2), [-1]))
+    h_j_2 = tf.scatter_update(h_j_2, tf.where(h_2 < 0.0), -0.2 * tf.ones_like(tf.where(h_2 < 0.0)))
+    x, y = h_j_2.get_shape().to_list()
+    jacobian = tf.reshape(h_j_2, [x, 1, y]) * W_2
 
     if FLAGS.layer_size == 2:
         # output
@@ -58,9 +64,11 @@ def deepnn(x, phase_train):
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
     b_3 = bias_variable([28*28])
-    h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
-    x, y = h_3.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [x, 1, y]) * W_3, jacobian)
+    h_3 = lrelu(tf.matmul(h_2, W_3) + b_3)
+    if phase_train == True:
+        jacobian = tf.reshape((1.0 - h_3) * h_3, [FLAGS.batch_size, 1, 28*28]) * W_3
+    else:
+        jacobian = tf.reshape((1.0 - h_3) * h_3, [FLAGS.entropy_num, 1, 28*28]) * W_3
 
     if FLAGS.layer_size == 3:
         # output
@@ -74,9 +82,11 @@ def deepnn(x, phase_train):
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
-    h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
-    x, y = h_4.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [x, 1, y]) * W_4, jacobian)
+    h_4 = lrelu(tf.matmul(h_3, W_4) + b_4)
+    if phase_train == True:
+        jacobian = tf.reshape((1.0 - h_4) * h_4, [FLAGS.batch_size, 1, 28*28]) * W_4
+    else:
+        jacobian = tf.reshape((1.0 - h_4) * h_4, [FLAGS.entropy_num, 1, 28*28]) * W_4
 
     if FLAGS.layer_size == 4:
         # output
@@ -90,9 +100,11 @@ def deepnn(x, phase_train):
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
     b_5 = bias_variable([28*28])
-    h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
-    x, y = h_5.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [x, 1, y]) * W_5, jacobian)
+    h_5 = lrelu(tf.matmul(h_4, W_5) + b_5)
+    if phase_train == True:
+        jacobian = tf.reshape((1.0 - h_5) * h_5, [FLAGS.batch_size, 1, 28*28]) * W_5
+    else:
+        jacobian = tf.reshape((1.0 - h_5) * h_5, [FLAGS.entropy_num, 1, 28*28]) * W_5
 
     if FLAGS.layer_size == 5:
         # output
@@ -106,9 +118,11 @@ def deepnn(x, phase_train):
     # 6 layer
     W_6 = weight_variable([28*28, 28*28])
     b_6 = bias_variable([28*28])
-    h_6 = tf.nn.sigmoid(tf.matmul(h_5, W_6) + b_6)
-    x, y = h_6.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_6) * h_6, [x, 1, y]) * W_6, jacobian)
+    h_6 = lrelu(tf.matmul(h_5, W_6) + b_6)
+    if phase_train == True:
+        jacobian = tf.reshape((1.0 - h_6) * h_6, [FLAGS.batch_size, 1, 28*28]) * W_6
+    else:
+        jacobian = tf.reshape((1.0 - h_6) * h_6, [FLAGS.entropy_num, 1, 28*28]) * W_6
 
     if FLAGS.layer_size == 6:
         # output
@@ -122,9 +136,11 @@ def deepnn(x, phase_train):
     # 7 layer
     W_7 = weight_variable([28*28, 28*28])
     b_7 = bias_variable([28*28])
-    h_7 = tf.nn.sigmoid(tf.matmul(h_6, W_7) + b_7)
-    x, y = h_7.get_shape().to_list()
-    jacobian = tf.matmul(tf.reshape((1.0 - h_7) * h_7, [x, 1, y]) * W_7, jacobian)
+    h_7 = lrelu(tf.matmul(h_6, W_7) + b_7)
+    if phase_train == True:
+        jacobian = tf.reshape((1.0 - h_7) * h_7, [FLAGS.batch_size, 1, 28*28]) * W_7
+    else:
+        jacobian = tf.reshape((1.0 - h_7) * h_7, [FLAGS.entropy_num, 1, 28*28]) * W_7
 
     # output
     W_out = weight_variable([28*28, 10])
@@ -145,6 +161,10 @@ def bias_variable(shape):
     """bias_variable generates a bias variable of a given shape."""
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
+
+
+def lrelu(x, leak=0.2, name="lrelu"):
+    return tf.maximum(x, leak * x)
 
 
 def svd(A, full_matrices=False, compute_uv=True, name=None):
