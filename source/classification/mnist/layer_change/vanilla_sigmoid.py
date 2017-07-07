@@ -13,7 +13,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 10, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 200000, "学習数")
+tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
@@ -267,15 +267,24 @@ def main(argv):
                         x: mnist.test.images, y_: mnist.test.labels, phase_train: False})
 
                     test_accuracy_list[_iter][i] = test_accuracy
+
                     A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
                     entropy_curr = entropy_all.eval(feed_dict={
-                        x: mnist.test.images[A], y_: mnist.test.labels[A], phase_train: False})
+                        x: mnist.test.images[A], phase_train: False})
                     entropy_list[_iter][i] = entropy_curr
+                    """
+                    true_entropy = 0.0
+                    for i in range(100):
+                        entropy_curr = entropy_all.eval(feed_dict={
+                            x: mnist.test.images[i*FLAGS.entropy_num:(i+1)*FLAGS.entropy_num], phase_train: False})
+                        true_entropy = true_entropy + entropy_curr
+                    entropy_list[_iter][i] = true_entropy / 100.0
+                    """
 
                     print('step %d, test accuracy %g, entropy %g' % (i, test_accuracy, entropy_curr))
                     print '---------------------'
 
-                if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
+                if _iter == 0 and (i % 10000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
                     layer_samples = sess.run([h_last],
                                   feed_dict={x: samples, phase_train: False})
