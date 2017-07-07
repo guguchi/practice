@@ -16,8 +16,7 @@ tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
-tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
-tf.app.flags.DEFINE_integer('test_batch_size', 1000, "テストバッチサイズ")
+tf.app.flags.DEFINE_integer('test_batch_size', 100, "テストバッチサイズ")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_integer('test_example', 10000, "テストデータ数")
 tf.app.flags.DEFINE_string('cifar_data_dir', './../../../data/', "cifar10保存先")
@@ -224,6 +223,7 @@ def main(argv):
     test_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
+    entropy_train_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'sigmoid_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -259,39 +259,44 @@ def main(argv):
 
                 _, cross_entropy_curr, train_accuracy_batch = sess.run(
                     [train_step, cross_entropy, accuracy],
-                    feed_dict={x: _train_images_batch, y_: _trains_labels_batch})
+                    feed_dict={x: _train_images_batch, y_: _trains_labels_batch, phase_train: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy_batch
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
+                    train_entropy = entropy_all.eval(feed_dict={
+                        x: train_images_batch, phase_train: False})
+                    entropy_train_list[_iter][i] = train_entropy
 
-                    test_accuracy = accuracy.eval(feed_dict={
-                        x: mnist.test.images, y_: mnist.test.labels, phase_train: False})
+                    true_test_accuracy = 0.0
+                    _step = 0
+                    while _step < num_iter:
+                        _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
 
-                    test_accuracy_list[_iter][i] = test_accuracy
+                        test_accuracy = accuracy.eval(feed_dict={
+                            x: _test_images, y_: _test_labels, phase_train: False})
+                        true_test_accuracy += test_accuracy
+                        _step += 1
+                    true_test_accuracy = true_test_accuracy / num_iter
+                    test_accuracy_list[_iter][i] = true_test_accuracy
 
-                    A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
+                    #_test_images, _test_labels = sess_test_example.run([test_images, test_labels])
+
                     entropy_curr = entropy_all.eval(feed_dict={
-                        x: mnist.test.images[A], phase_train: False})
-                    entropy_list[_iter][i] = entropy_curr
-                    """
-                    true_entropy = 0.0
-                    for i in range(100):
-                        entropy_curr = entropy_all.eval(feed_dict={
-                            x: mnist.test.images[i*FLAGS.entropy_num:(i+1)*FLAGS.entropy_num], phase_train: False})
-                        true_entropy = true_entropy + entropy_curr
-                    entropy_list[_iter][i] = true_entropy / 100.0
-                    """
+                        x: _test_images, phase_train: False})
 
-                    print('step %d, test accuracy %g, entropy %g' % (i, test_accuracy, entropy_curr))
+                    entropy_list[_iter][i] = entropy_curr
+                    #entropy_curr = 1.0
+                    print('step %d, test accuracy %g, entropy %g' % (i, true_test_accuracy, entropy_curr))
                     print '---------------------'
 
-                if _iter == 0 and (i % 10000 == 0 or i == FLAGS.step - 1):
-                    samples = mnist.test.images[:18]
-                    layer_samples = sess.run([h_last],
-                                  feed_dict={x: samples, phase_train: False})
-                    fig = plot(samples, layer_samples[0])
+                if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
+                    _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
+
+                    layer_samples = sess.run([h_7],
+                                  feed_dict={x: _test_images[:18], phase_train: False})
+                    fig = plot(_test_images[:18], layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
                     plt.close()
 
@@ -300,6 +305,7 @@ def main(argv):
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)
     np.save(save_path+'cross_entropy.npy', cross_entropy_list)
     np.save(save_path+'entropy.npy', entropy_list)
+    np.save(save_path+'entropy_train.npy', entropy_train_list)
 
 
 if __name__ == '__main__':
