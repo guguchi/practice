@@ -28,11 +28,17 @@ def deepnn(x, phase_train):
     b_1 = bias_variable([28*28])
     h_1 = lrelu(tf.matmul(x, W_1) + b_1)
 
-    x, y = h_1.get_shape()
-    h_j_1 = tf.Variable(tf.ones([100*28*28]))
-    h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
-    h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
-    jacobian = tf.reshape(h_j_1, [tf.shape(h_1)[0], 1, tf.shape(h_1)[1]]) * W_1
+    if phase_train == True:
+        h_j_1 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
+        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
+        jacobian = tf.reshape(h_j_1, [FLAGS.batch_size, 1, 28*28]) * W_1
+    else:
+        h_j_1 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
+        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
+        jacobian = tf.reshape(h_j_1, [FLAGS.entropy_num, 1, 28*28]) * W_1
+
 
     if FLAGS.layer_size == 1:
         # output
@@ -48,11 +54,17 @@ def deepnn(x, phase_train):
     b_2 = bias_variable([28*28])
     h_2 = lrelu(tf.matmul(h_1, W_2) + b_2)
 
-    x, y = h_2.get_shape()
-    h_j_2 = tf.Variable(tf.ones([100*28*28]))
-    h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
-    h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_2, [tf.shape(h_2)[0], 1, tf.shape(h_2)[1]]) * W_2, jacobian)
+    if phase_train == True:
+        h_j_2 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
+        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.batch_size, 1, 28*28]) * W_2, jacobian)
+    else:
+        h_j_2 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
+        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.entropy_num, 1, 28*28]) * W_2, jacobian)
+
 
     if FLAGS.layer_size == 2:
         # output
@@ -68,11 +80,17 @@ def deepnn(x, phase_train):
     b_3 = bias_variable([28*28])
     h_3 = lrelu(tf.matmul(h_2, W_3) + b_3)
 
-    x, y = h_3.get_shape()
-    h_j_3 = tf.Variable(tf.ones([100*28*28]))
-    h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
-    h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_3, [tf.shape(h_3)[0], 1, tf.shape(h_3)[1]]) * W_3, jacobian)
+    if phase_train == True:
+        h_j_3 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
+        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.batch_size, 1, 28*28]) * W_3, jacobian)
+    else:
+        h_j_3 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
+        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.entropy_num, 1, 28*28]) * W_3, jacobian)
+
 
     if FLAGS.layer_size == 3:
         # output
@@ -88,11 +106,17 @@ def deepnn(x, phase_train):
     b_4 = bias_variable([28*28])
     h_4 = lrelu(tf.matmul(h_3, W_4) + b_4)
 
-    x, y = h_4.get_shape()
-    h_j_4 = tf.Variable(tf.ones([100*28*28]))
-    h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
-    h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_4, [tf.shape(h_4)[0], 1, tf.shape(h_4)[1]]) * W_4, jacobian)
+    if phase_train == True:
+        h_j_4 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
+        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.batch_size, 1, 28*28]) * W_4, jacobian)
+    else:
+        h_j_4 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
+        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.entropy_num, 1, 28*28]) * W_4, jacobian)
+
 
     if FLAGS.layer_size == 4:
         # output
@@ -108,11 +132,17 @@ def deepnn(x, phase_train):
     b_5 = bias_variable([28*28])
     h_5 = lrelu(tf.matmul(h_4, W_5) + b_5)
 
-    x, y = h_5.get_shape()
-    h_j_5 = tf.Variable(tf.ones([100*28*28]))
-    h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
-    h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_5, [tf.shape(h_5)[0], 1, tf.shape(h_5)[1]]) * W_5, jacobian)
+    if phase_train == True:
+        h_j_5 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
+        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.batch_size, 1, 28*28]) * W_5, jacobian)
+    else:
+        h_j_5 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
+        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.entropy_num, 1, 28*28]) * W_5, jacobian)
+
 
     if FLAGS.layer_size == 5:
         # output
@@ -128,11 +158,17 @@ def deepnn(x, phase_train):
     b_6 = bias_variable([28*28])
     h_6 = lrelu(tf.matmul(h_5, W_6) + b_6)
 
-    x, y = h_6.get_shape()
-    h_j_6 = tf.Variable(tf.ones([100*28*28]))
-    h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
-    h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_6, [tf.shape(h_6)[0], 1, tf.shape(h_6)[1]]) * W_6, jacobian)
+    if phase_train == True:
+        h_j_6 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
+        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.batch_size, 1, 28*28]) * W_6, jacobian)
+    else:
+        h_j_6 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
+        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.entropy_num, 1, 28*28]) * W_6, jacobian)
+
 
     if FLAGS.layer_size == 6:
         # output
@@ -148,11 +184,17 @@ def deepnn(x, phase_train):
     b_7 = bias_variable([28*28])
     h_7 = lrelu(tf.matmul(h_6, W_7) + b_7)
 
-    x, y = h_7.get_shape()
-    h_j_7 = tf.Variable(tf.ones([100*28*28]))
-    h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
-    h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
-    jacobian = tf.matmul(tf.reshape(h_j_7, [tf.shape(h_7)[0], 1, tf.shape(h_7)[1]]) * W_7, jacobian)
+    if phase_train == True:
+        h_j_7 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
+        h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
+        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.batch_size, 1, 28*28]) * W_7, jacobian)
+    else:
+        h_j_7 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
+        h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
+        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
+        jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.entropy_num, 1, 28*28]) * W_7, jacobian)
+
 
     # output
     W_out = weight_variable([28*28, 10])
@@ -196,7 +238,7 @@ def compute_entropy_with_svd(jacobian):
     #if self.layer_method == "each":
     s_index = len(np.where(s == 0.0)[0])
     s = tf.maximum(tf.abs(s), 0.1 ** 8)
-    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
+    log_determine = tf.log(s) + s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
     return entropy
 
@@ -275,14 +317,17 @@ def main(argv):
 
                 batch = mnist.train.next_batch(FLAGS.batch_size)
 
-                _, cross_entropy_curr, train_accuracy, train_entropy = sess.run([
-                    train_step, cross_entropy, accuracy, entropy_all], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
+                _, cross_entropy_curr, train_accuracy = sess.run([
+                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
-                entropy_train_list[_iter][i] = train_entropy
+
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
+                    train_entropy = entropy_all.eval(feed_dict={
+                        x: batch[0], y_: batch[1], phase_train: False})
+                    entropy_train_list[_iter][i] = train_entropy
 
                     test_accuracy = accuracy.eval(feed_dict={
                         x: mnist.test.images, y_: mnist.test.labels, phase_train: False})
@@ -293,7 +338,7 @@ def main(argv):
                         x: mnist.test.images[A], y_: mnist.test.labels[A], phase_train: False})
                     entropy_list[_iter][i] = entropy_curr
 
-                    print('step %d, test accuracy %g, entropy %g' % (i, test_accuracy, entropy_curr))
+                    print('step %d, test accuracy %g, entropy %g, train entropy %g' % (i, test_accuracy, entropy_curr, train_entropy))
                     print '---------------------'
 
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):

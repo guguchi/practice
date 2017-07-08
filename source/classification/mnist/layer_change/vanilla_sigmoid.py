@@ -236,14 +236,16 @@ def main(argv):
 
                 batch = mnist.train.next_batch(FLAGS.batch_size)
 
-                _, cross_entropy_curr, train_accuracy, train_entropy = sess.run([
-                    train_step, cross_entropy, accuracy, entropy_all], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
+                _, cross_entropy_curr, train_accuracy = sess.run([
+                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
-                entropy_train_list[_iter][i] = train_entropy
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
+                    train_entropy = entropy_all.eval(feed_dict={
+                        x: batch[0], y_: batch[1], phase_train: False})
+                    entropy_train_list[_iter][i] = train_entropy
 
                     test_accuracy = accuracy.eval(feed_dict={
                         x: mnist.test.images, y_: mnist.test.labels, phase_train: False})
@@ -263,7 +265,7 @@ def main(argv):
                     entropy_list[_iter][i] = true_entropy / 100.0
                     """
 
-                    print('step %d, test accuracy %g, entropy %g' % (i, test_accuracy, entropy_curr))
+                    print('step %d, test accuracy %g, entropy %g, train entropy %g' % (i, test_accuracy, entropy_curr, train_entropy))
                     print '---------------------'
 
                 if _iter == 0 and (i % 10000 == 0 or i == FLAGS.step - 1):
