@@ -4,11 +4,11 @@ import os
 import glob
 import matplotlib.pyplot as plt
 
-activation = 'sigmoid'#'lrelu'
+activation = 'sigmoid'#'lrelu'#
 batch = 25
 alpha = 0.01#0.0005
 
-layer_size_list = [2, 5]
+layer_size_list = [2, 3, 4, 5]
 
 plt.subplot(211)
 for layer_size in layer_size_list:
@@ -65,7 +65,7 @@ for layer_size in layer_size_list:
     _range = np.where((test_accuracy_list[0] != 0))[0]
     plt.plot(_range, np.mean(test_accuracy_list[:, _range], axis=0), alpha=0.5, label = 'test: {}'.format(layer_size))
 
-plt.ylim(0.9, 1.0)
+plt.ylim(0.94, 0.98)
 plt.legend()
 plt.savefig('{}_test_batch_{}_alpha_{}.png'.format(activation, batch, alpha))
 plt.show()

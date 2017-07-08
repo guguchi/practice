@@ -194,8 +194,9 @@ def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
-    s = tf.maximum(s, 0.1 ** 8)
-    log_determine = tf.log(tf.abs(s))
+    s_index = len(np.where(s == 0.0)[0])
+    s = tf.maximum(tf.abs(s), 0.1 ** 8)
+    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
     entropy = tf.reduce_mean(log_determine)
     return entropy
 
