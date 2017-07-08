@@ -17,7 +17,7 @@ tf.app.flags.DEFINE_integer('step', 200000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
-tf.app.flags.DEFINE_float('gpu_memory', 0.15, "gpuメモリ使用割合")
+tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
 tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
 
