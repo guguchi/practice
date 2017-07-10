@@ -16,7 +16,6 @@ tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
-tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('test_batch_size', 1000, "テストバッチサイズ")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_integer('test_example', 10000, "テストデータ数")
@@ -31,29 +30,11 @@ def deepnn(x):
     h_1 = tf.nn.relu(tf.matmul(x, W_1) + b_1)
     jacobian = W_1
 
-    if FLAGS.layer_size == 1:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_1, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_1
-
     # 2 layer
     W_2 = weight_variable([32*32, 32*32])
     b_2 = bias_variable([32*32])
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     jacobian = tf.matmul(W_2, jacobian)
-
-    if FLAGS.layer_size == 2:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_2, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_2
 
     # 3 layer
     W_3 = weight_variable([32*32, 32*32])
@@ -61,29 +42,11 @@ def deepnn(x):
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     jacobian = tf.matmul(W_3, jacobian)
 
-    if FLAGS.layer_size == 3:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_3, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_3
-
     # 4 layer
     W_4 = weight_variable([32*32, 32*32])
     b_4 = bias_variable([32*32])
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     jacobian = tf.matmul(W_4, jacobian)
-
-    if FLAGS.layer_size == 4:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_4, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_4
 
     # 5 layer
     W_5 = weight_variable([32*32, 32*32])
@@ -91,29 +54,11 @@ def deepnn(x):
     h_5 = tf.nn.relu(tf.matmul(h_4, W_5) + b_5)
     jacobian = tf.matmul(W_5, jacobian)
 
-    if FLAGS.layer_size == 5:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_5, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_5
-
     # 6 layer
     W_6 = weight_variable([32*32, 32*32])
     b_6 = bias_variable([32*32])
     h_6 = tf.nn.relu(tf.matmul(h_5, W_6) + b_6)
     jacobian = tf.matmul(W_6, jacobian)
-
-    if FLAGS.layer_size == 6:
-        # output
-        W_out = weight_variable([32*32, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_6, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_6
 
     # 7 layer
     W_7 = weight_variable([32*32, 32*32])

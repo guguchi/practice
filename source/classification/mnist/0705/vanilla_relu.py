@@ -15,10 +15,9 @@ tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 250000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
-tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
-tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
+tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist")
+tf.app.flags.DEFINE_string('save_data_path', './../..\../../data/classification/mnist/batch_chage/', "データ保存先")
 
 
 def deepnn(x):
@@ -28,29 +27,11 @@ def deepnn(x):
     h_1 = tf.nn.relu(tf.matmul(x, W_1) + b_1)
     jacobian = W_1
 
-    if FLAGS.layer_size == 1:
-        # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_1, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_1
-
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
     b_2 = bias_variable([28*28])
     h_2 = tf.nn.relu(tf.matmul(h_1, W_2) + b_2)
     jacobian = tf.matmul(W_2, jacobian)
-
-    if FLAGS.layer_size == 2:
-        # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_2, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_2
 
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
@@ -58,29 +39,11 @@ def deepnn(x):
     h_3 = tf.nn.relu(tf.matmul(h_2, W_3) + b_3)
     jacobian = tf.matmul(W_3, jacobian)
 
-    if FLAGS.layer_size == 3:
-        # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_3, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_3
-
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
     b_4 = bias_variable([28*28])
     h_4 = tf.nn.relu(tf.matmul(h_3, W_4) + b_4)
     jacobian = tf.matmul(W_4, jacobian)
-
-    if FLAGS.layer_size == 4:
-        # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
-
-        y_out = tf.matmul(h_4, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_4
 
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
@@ -129,10 +92,8 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
 def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
-    #s = tf.maximum(s, 0.1 ** 8)
-    s_index = len(np.where(s == 0.0)[0])
-    s = tf.maximum(tf.abs(s), 0.1 ** 8)
-    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
+    #if self.layer_method == "each":
+    s = tf.maximum(s, 0.1 ** 8)
     log_determine = tf.log(tf.abs(s))
     entropy = tf.reduce_mean(log_determine)
     return entropy
@@ -170,7 +131,7 @@ def main(argv):
     y_ = tf.placeholder(tf.float32, [None, 10])
 
     # model
-    y_out, entropy_all, h_last = deepnn(x)
+    y_out, entropy_all, h_5 = deepnn(x)
 
     # objective
     cross_entropy = tf.reduce_mean(
@@ -189,8 +150,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
-    save_path = FLAGS.save_data_path + 'relu_layer_{}_batch_{}_alpha_{}/'.format(
-        FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
+    save_path = FLAGS.save_data_path + 'relu_batch_{}_alpha_{}/'.format(FLAGS.batch_size, FLAGS.learning_rate)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -232,7 +192,7 @@ def main(argv):
 
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
-                    layer_samples = sess.run([h_last],
+                    layer_samples = sess.run([h_5],
                                   feed_dict={x: samples})
                     fig = plot(samples, layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
@@ -243,7 +203,6 @@ def main(argv):
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)
     np.save(save_path+'cross_entropy.npy', cross_entropy_list)
     np.save(save_path+'entropy.npy', entropy_list)
-
 
 
 if __name__ == '__main__':
