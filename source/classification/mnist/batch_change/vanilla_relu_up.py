@@ -37,8 +37,8 @@ def deepnn(x, pred):
             b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_1, W_out) + b_out
-        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_1, singular_value
+        singular_value = compute_svd(jacobian)
+        return y_out, h_1, singular_value
 
     # 2 layer
     with tf.variable_scope('classifier') as scope:
@@ -53,8 +53,8 @@ def deepnn(x, pred):
             b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_2, W_out) + b_out
-        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_2, singular_value
+        singular_value = compute_svd(jacobian)
+        return y_out, h_2, singular_value
 
     # 3 layer
     with tf.variable_scope('classifier') as scope:
@@ -70,8 +70,8 @@ def deepnn(x, pred):
             b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_3, W_out) + b_out
-        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_3, singular_value
+        singular_value = compute_svd(jacobian)
+        return y_out, h_3, singular_value
 
     # 4 layer
     with tf.variable_scope('classifier') as scope:
@@ -87,8 +87,8 @@ def deepnn(x, pred):
             b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_4, W_out) + b_out
-        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_4, singular_value
+        singular_value = compute_svd(jacobian)
+        return y_out, h_4, singular_value
 
     # 5 layer
     with tf.variable_scope('classifier') as scope:
@@ -103,8 +103,8 @@ def deepnn(x, pred):
         b_out = bias_variable([10], 'b_out')
 
     y_out = tf.matmul(h_5, W_out) + b_out
-    entropy_all, singular_value = compute_entropy_with_svd(jacobian)
-    return y_out, entropy_all, h_5, singular_value
+    singular_value = compute_svd(jacobian)
+    return y_out, h_5, singular_value
 
 
 def weight_variable(shape):
@@ -130,15 +130,10 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
     return S
 
 
-def compute_entropy_with_svd(jacobian):
+def compute_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
-    #if self.layer_method == "each":
-    #s_index = len(np.where(s == 0.0)[0])
-    _s = tf.maximum(tf.abs(s), 0.1 ** 12)
-    log_determine = tf.log(_s)#+ s_index * 8.0 * tf.log(10.0)
-    entropy = tf.reduce_mean(log_determine)
-    return entropy, s
+    return s
 
 
 def plot(samples, layer_samples):
@@ -174,7 +169,7 @@ def main(argv):
     pred = tf.placeholder(tf.bool, name='pred')
 
     # model
-    y_out, entropy_all, h_last, singular_value = deepnn(x, pred)
+    y_out, h_last, singular_value = deepnn(x, pred)
 
     # variable
     train_variables = tf.trainable_variables()
@@ -193,10 +188,11 @@ def main(argv):
 
     # save data
     train_accuracy_list_batch = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
-    #train_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     test_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
-    entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
+    with tf.device('/cpu:0'):
+        train_singular_value_list = np.zeros((FLAGS.iteration, int(FLAGS.step / 5000.0) + 1, FLAGS.batch_size, 28*28), dtype=np.float32)
+        test_singular_value_list = np.zeros((FLAGS.iteration, int(FLAGS.step / 5000.0) + 1, FLAGS.entropy_num, 28*28), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'relu_up_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -209,11 +205,12 @@ def main(argv):
              )
     )
 
+    I = 0
     for _iter in range(FLAGS.iteration):
         print '=== iteration {} ==='.format(_iter)
 
         with tf.Session(config=config) as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.global_variables_initializer(), feed_dict={pred: False})
 
             for i in range(FLAGS.step):
 
@@ -225,21 +222,24 @@ def main(argv):
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
-
                 if i % 5000 == 0 or i == FLAGS.step - 1:
-                    entropy_curr, sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)],
-                                                    feed_dict={pred: False})
-                    entropy_list[_iter][i] = entropy_curr
+                    singular_value_curr = sess.run([singular_value], feed_dict={
+                        x: batch[0], y_: batch[1], pred: False})
+                    train_singular_value_list[_iter][I] = singular_value_curr
 
                     test_accuracy = accuracy.eval(feed_dict={
                         x: mnist.test.images, y_: mnist.test.labels, pred: False})
 
                     test_accuracy_list[_iter][i] = test_accuracy
+                    A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
+                    singular_value_curr = sess.run([singular_value], feed_dict={
+                        x: mnist.test.images[A], y_: mnist.test.labels[A], pred: False})
+                    test_singular_value_list[_iter][I] = singular_value_curr
 
-                    print('step %d, test accuracy %g, entropy %g, sv min %g' % (
-                        i, test_accuracy, entropy_curr, sv_min))
+                    print('step %d, test accuracy %g, ' % (i, test_accuracy))
                     print '---------------------'
-
+                    I = I + 1
+                """
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
                     layer_samples = sess.run([h_last],
@@ -247,12 +247,15 @@ def main(argv):
                     fig = plot(samples, layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
                     plt.close()
+                """
+
 
     #np.save(save_path+'train_accuracy.npy', train_accuracy_list)
     np.save(save_path+'train_accuracy_batch.npy', train_accuracy_list_batch)
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)
     np.save(save_path+'cross_entropy.npy', cross_entropy_list)
-    np.save(save_path+'entropy.npy', entropy_list)
+    np.save(save_path+'train_singular_value.npy', train_singular_value_list)
+    np.save(save_path+'test_singular_value.npy', test_singular_value_list)
 
 
 if __name__ == '__main__':
