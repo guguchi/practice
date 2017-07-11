@@ -12,7 +12,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 1, "学習反復回数")
+tf.app.flags.DEFINE_integer('iteration', 2, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
@@ -142,16 +142,16 @@ def deepnn(x, pred):
     return y_out, entropy_all, h_7, singular_value
 
 
-def weight_variable(shape):
+def weight_variable(shape, name):
     """weight_variable generates a weight variable of a given shape."""
     initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
+    return tf.Variable(initial, name=name)
 
 
-def bias_variable(shape):
+def bias_variable(shape, name):
     """bias_variable generates a bias variable of a given shape."""
     initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
+    return tf.Variable(initial, name=name)
 
 
 def svd(A, full_matrices=False, compute_uv=True, name=None):
@@ -170,10 +170,10 @@ def compute_entropy_with_svd(jacobian):
         s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
     #s_index = len(np.where(s == 0.0)[0])
-    _s = tf.maximum(tf.abs(s), 0.1 ** 12)
+    _s = tf.abs(s)#tf.maximum(tf.abs(s), 0.1 ** 18)
     log_determine = tf.log(_s)#+ s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
-    return entropy, s
+    return entropy, _s
 
 
 def plot(samples, layer_samples):
@@ -209,7 +209,7 @@ def main(argv):
     pred = tf.placeholder(tf.bool, name='pred')
 
     # model
-    y_out, entropy_all, h_last = deepnn(x, pred)
+    y_out, entropy_all, h_last, singular_value = deepnn(x, pred)
 
     # variable
     train_variables = tf.trainable_variables()
@@ -278,7 +278,7 @@ def main(argv):
                     print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g' % (
                         i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min))
                     print '---------------------'
-
+                """
                 if _iter == 0 and (i % 10000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
                     layer_samples = sess.run([h_last],
@@ -286,7 +286,7 @@ def main(argv):
                     fig = plot(samples, layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
                     plt.close()
-
+                """
     #np.save(save_path+'train_accuracy.npy', train_accuracy_list)
     np.save(save_path+'train_accuracy_batch.npy', train_accuracy_list_batch)
     np.save(save_path+'test_accuracy.npy', test_accuracy_list)

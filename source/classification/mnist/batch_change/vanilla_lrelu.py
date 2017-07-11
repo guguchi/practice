@@ -13,7 +13,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 1, "学習反復回数")
+tf.app.flags.DEFINE_integer('iteration', 2, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
@@ -287,10 +287,10 @@ def compute_entropy_with_svd(jacobian):
         s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
     #s_index = len(np.where(s == 0.0)[0])
-    _s = tf.maximum(tf.abs(s), 0.1 ** 12)
+    _s = tf.abs(s)#tf.maximum(tf.abs(s), 0.1 ** 18)
     log_determine = tf.log(_s)#+ s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
-    return entropy, s
+    return entropy, _s
 
 
 def plot(samples, layer_samples):
@@ -395,7 +395,7 @@ def main(argv):
                     print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g' % (
                         i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min))
                     print '---------------------'
-
+                """
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
                     layer_samples = sess.run([h_last],
@@ -403,6 +403,7 @@ def main(argv):
                     fig = plot(samples, layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
                     plt.close()
+                """
 
 
     #np.save(save_path+'train_accuracy.npy', train_accuracy_list)
