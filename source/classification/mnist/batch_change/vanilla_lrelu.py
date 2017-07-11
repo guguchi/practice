@@ -328,7 +328,6 @@ def main(argv):
     # model
     y_out, entropy_all, h_last, singular_value = deepnn(x, pred)
 
-
     # variable
     train_variables = tf.trainable_variables()
     theta = [v for v in train_variables if v.name.startswith("classifier")]
@@ -336,7 +335,8 @@ def main(argv):
     # objective
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_out))
-    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(cross_entropy, var_list=theta)
+    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(
+        cross_entropy, var_list=theta)
     #GradientDescentOptimizer / AdamOptimizer / MomentumOptimizer
 
     # evaluation
@@ -379,7 +379,7 @@ def main(argv):
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
-                    train_entropy = entropy_all.eval(feed_dict={
+                    train_entropy, train_sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)], feed_dict={
                         x: batch[0], y_: batch[1], pred: False})
                     entropy_train_list[_iter][i] = train_entropy
 
@@ -388,11 +388,12 @@ def main(argv):
 
                     test_accuracy_list[_iter][i] = test_accuracy
                     A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
-                    entropy_curr = entropy_all.eval(feed_dict={
+                    entropy_curr, sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)], feed_dict={
                         x: mnist.test.images[A], y_: mnist.test.labels[A], pred: False})
                     entropy_list[_iter][i] = entropy_curr
 
-                    print('step %d, test accuracy %g, entropy %g, train entropy %g' % (i, test_accuracy, entropy_curr, train_entropy))
+                    print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g' % (
+                        i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min))
                     print '---------------------'
 
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):

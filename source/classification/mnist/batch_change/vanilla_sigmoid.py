@@ -22,110 +22,124 @@ tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存
 tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/batch_change/', "データ保存先")
 
 
-def deepnn(x, phase_train):
+def deepnn(x, pred):
     # 1 layer
-    W_1 = weight_variable([28*28, 28*28])
-    b_1 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_1 = weight_variable([28*28, 28*28], 'W_1')
+        b_1 = bias_variable([28*28], 'b_1')
     h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
     jacobian = tf.reshape((1.0 - h_1) * h_1, [tf.shape(h_1)[0], 1, tf.shape(h_1)[1]]) * W_1
 
     if FLAGS.layer_size == 1:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_1, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_1
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_1, singular_value
 
     # 2 layer
-    W_2 = weight_variable([28*28, 28*28])
-    b_2 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_2 = weight_variable([28*28, 28*28], 'W_2')
+        b_2 = bias_variable([28*28], 'b_2')
     h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
     jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [tf.shape(h_2)[0], 1, tf.shape(h_2)[1]]) * W_2, jacobian)
 
     if FLAGS.layer_size == 2:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_2, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_2
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_2, singular_value
 
     # 3 layer
-    W_3 = weight_variable([28*28, 28*28])
-    b_3 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_3 = weight_variable([28*28, 28*28], 'W_3')
+        b_3 = bias_variable([28*28], 'b_3')
     h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
     jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [tf.shape(h_3)[0], 1, tf.shape(h_3)[1]]) * W_3, jacobian)
 
     if FLAGS.layer_size == 3:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_3, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_3
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_3, singular_value
 
     # 4 layer
-    W_4 = weight_variable([28*28, 28*28])
-    b_4 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_4 = weight_variable([28*28, 28*28], 'W_4')
+        b_4 = bias_variable([28*28], 'b_4')
     h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
     jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [tf.shape(h_4)[0], 1, tf.shape(h_4)[1]]) * W_4, jacobian)
 
     if FLAGS.layer_size == 4:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_4, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_4
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_4, singular_value
 
     # 5 layer
-    W_5 = weight_variable([28*28, 28*28])
-    b_5 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_5 = weight_variable([28*28, 28*28], 'W_5')
+        b_5 = bias_variable([28*28], 'b_5')
     h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
     jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [tf.shape(h_5)[0], 1, tf.shape(h_5)[1]]) * W_5, jacobian)
 
     if FLAGS.layer_size == 5:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_5, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_5
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_5, singular_value
 
     # 6 layer
-    W_6 = weight_variable([28*28, 28*28])
-    b_6 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_6 = weight_variable([28*28, 28*28], 'W_6')
+        b_6 = bias_variable([28*28], 'b_6')
     h_6 = tf.nn.sigmoid(tf.matmul(h_5, W_6) + b_6)
     jacobian = tf.matmul(tf.reshape((1.0 - h_6) * h_6, [tf.shape(h_6)[0], 1, tf.shape(h_6)[1]]) * W_6, jacobian)
 
     if FLAGS.layer_size == 6:
         # output
-        W_out = weight_variable([28*28, 10])
-        b_out = bias_variable([10])
+        with tf.variable_scope('classifier') as scope:
+            W_out = weight_variable([28*28, 10], 'W_out')
+            b_out = bias_variable([10], 'b_out')
 
         y_out = tf.matmul(h_6, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_6
+        entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_6, singular_value
 
     # 7 layer
-    W_7 = weight_variable([28*28, 28*28])
-    b_7 = bias_variable([28*28])
+    with tf.variable_scope('classifier') as scope:
+        W_7 = weight_variable([28*28, 28*28], 'W_7')
+        b_7 = bias_variable([28*28], 'b_7')
     h_7 = tf.nn.sigmoid(tf.matmul(h_6, W_7) + b_7)
     jacobian = tf.matmul(tf.reshape((1.0 - h_7) * h_7, [tf.shape(h_7)[0], 1, tf.shape(h_7)[1]]) * W_7, jacobian)
 
     # output
-    W_out = weight_variable([28*28, 10])
-    b_out = bias_variable([10])
+    with tf.variable_scope('classifier') as scope:
+        W_out = weight_variable([28*28, 10], 'W_out')
+        b_out = bias_variable([10], 'b_out')
 
     y_out = tf.matmul(h_7, W_out) + b_out
-    entropy_all = compute_entropy_with_svd(jacobian)
-    return y_out, entropy_all, h_7
+    entropy_all, singular_value = compute_entropy_with_svd(jacobian)
+    return y_out, entropy_all, h_7, singular_value
 
 
 def weight_variable(shape):
@@ -154,12 +168,12 @@ def svd(A, full_matrices=False, compute_uv=True, name=None):
 def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
-    #s = tf.maximum(s, 0.1 ** 8)
-    s_index = len(np.where(s == 0.0)[0])
-    s = tf.maximum(tf.abs(s), 0.1 ** 8)
-    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
+    #if self.layer_method == "each":
+    #s_index = len(np.where(s == 0.0)[0])
+    _s = tf.maximum(tf.abs(s), 0.1 ** 12)
+    log_determine = tf.log(_s)#+ s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
-    return entropy
+    return entropy, s
 
 
 def plot(samples, layer_samples):
@@ -192,15 +206,20 @@ def main(argv):
     # placeholder
     x = tf.placeholder(tf.float32, [None, 28*28])
     y_ = tf.placeholder(tf.float32, [None, 10])
-    phase_train = tf.placeholder(tf.bool, name='phase_train')
+    pred = tf.placeholder(tf.bool, name='pred')
 
     # model
-    y_out, entropy_all, h_last = deepnn(x, phase_train)
+    y_out, entropy_all, h_last = deepnn(x, pred)
+
+    # variable
+    train_variables = tf.trainable_variables()
+    theta = [v for v in train_variables if v.name.startswith("classifier")]
 
     # objective
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_out))
-    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(cross_entropy)
+    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(
+        cross_entropy, var_list=theta)
     #GradientDescentOptimizer / AdamOptimizer / MomentumOptimizer
 
     # evaluation
@@ -237,41 +256,33 @@ def main(argv):
                 batch = mnist.train.next_batch(FLAGS.batch_size)
 
                 _, cross_entropy_curr, train_accuracy = sess.run([
-                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
+                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], pred: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
-                    train_entropy = entropy_all.eval(feed_dict={
-                        x: batch[0], y_: batch[1], phase_train: False})
+                    train_entropy, train_sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)], feed_dict={
+                        x: batch[0], y_: batch[1], pred: False})
                     entropy_train_list[_iter][i] = train_entropy
 
                     test_accuracy = accuracy.eval(feed_dict={
-                        x: mnist.test.images, y_: mnist.test.labels, phase_train: False})
+                        x: mnist.test.images, y_: mnist.test.labels, pred: False})
 
                     test_accuracy_list[_iter][i] = test_accuracy
-
                     A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
-                    entropy_curr = entropy_all.eval(feed_dict={
-                        x: mnist.test.images[A], phase_train: False})
+                    entropy_curr, sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)], feed_dict={
+                        x: mnist.test.images[A], y_: mnist.test.labels[A], pred: False})
                     entropy_list[_iter][i] = entropy_curr
-                    """
-                    true_entropy = 0.0
-                    for i in range(100):
-                        entropy_curr = entropy_all.eval(feed_dict={
-                            x: mnist.test.images[i*FLAGS.entropy_num:(i+1)*FLAGS.entropy_num], phase_train: False})
-                        true_entropy = true_entropy + entropy_curr
-                    entropy_list[_iter][i] = true_entropy / 100.0
-                    """
 
-                    print('step %d, test accuracy %g, entropy %g, train entropy %g' % (i, test_accuracy, entropy_curr, train_entropy))
+                    print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g' % (
+                        i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min))
                     print '---------------------'
 
                 if _iter == 0 and (i % 10000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
                     layer_samples = sess.run([h_last],
-                                  feed_dict={x: samples, phase_train: False})
+                                  feed_dict={x: samples, pred: False})
                     fig = plot(samples, layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))
                     plt.close()
