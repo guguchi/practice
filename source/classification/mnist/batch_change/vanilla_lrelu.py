@@ -12,7 +12,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
+tf.app.flags.DEFINE_integer('iteration', 1, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 500000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
@@ -28,15 +28,16 @@ def deepnn(x, phase_train):
     b_1 = bias_variable([28*28])
     h_1 = lrelu(tf.matmul(x, W_1) + b_1)
 
+    def l1_true()
     if phase_train == True:
         h_j_1 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
-        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
+        h_j_1 = tf.scatter_update(h_j_1, h_1_index, 0.2 * tf.ones_like(h_1_index, tf.float32))
         jacobian = tf.reshape(h_j_1, [FLAGS.batch_size, 1, 28*28]) * W_1
     else:
         h_j_1 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
-        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
+        h_j_1 = tf.scatter_update(h_j_1, h_1_index, 0.2 * tf.ones_like(h_1_index, tf.float32))
         jacobian = tf.reshape(h_j_1, [FLAGS.entropy_num, 1, 28*28]) * W_1
 
 
@@ -46,8 +47,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_1, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_1
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_1, s
 
     # 2 layer
     W_2 = weight_variable([28*28, 28*28])
@@ -57,12 +58,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_2 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
-        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
+        h_j_2 = tf.scatter_update(h_j_2, h_2_index, 0.2 * tf.ones_like(h_2_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.batch_size, 1, 28*28]) * W_2, jacobian)
     else:
         h_j_2 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
-        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
+        h_j_2 = tf.scatter_update(h_j_2, h_2_index, 0.2 * tf.ones_like(h_2_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.entropy_num, 1, 28*28]) * W_2, jacobian)
 
 
@@ -72,8 +73,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_2, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_2
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_2, s
 
     # 3 layer
     W_3 = weight_variable([28*28, 28*28])
@@ -83,12 +84,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_3 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
-        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
+        h_j_3 = tf.scatter_update(h_j_3, h_3_index, 0.2 * tf.ones_like(h_3_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.batch_size, 1, 28*28]) * W_3, jacobian)
     else:
         h_j_3 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
-        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
+        h_j_3 = tf.scatter_update(h_j_3, h_3_index, 0.2 * tf.ones_like(h_3_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.entropy_num, 1, 28*28]) * W_3, jacobian)
 
 
@@ -98,8 +99,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_3, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_3
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_3, s
 
     # 4 layer
     W_4 = weight_variable([28*28, 28*28])
@@ -109,12 +110,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_4 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
-        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
+        h_j_4 = tf.scatter_update(h_j_4, h_4_index, 0.2 * tf.ones_like(h_4_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.batch_size, 1, 28*28]) * W_4, jacobian)
     else:
         h_j_4 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
-        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
+        h_j_4 = tf.scatter_update(h_j_4, h_4_index, 0.2 * tf.ones_like(h_4_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.entropy_num, 1, 28*28]) * W_4, jacobian)
 
 
@@ -124,8 +125,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_4, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_4
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_4, s
 
     # 5 layer
     W_5 = weight_variable([28*28, 28*28])
@@ -135,12 +136,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_5 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
-        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
+        h_j_5 = tf.scatter_update(h_j_5, h_5_index, 0.2 * tf.ones_like(h_5_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.batch_size, 1, 28*28]) * W_5, jacobian)
     else:
         h_j_5 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
-        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
+        h_j_5 = tf.scatter_update(h_j_5, h_5_index, 0.2 * tf.ones_like(h_5_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.entropy_num, 1, 28*28]) * W_5, jacobian)
 
 
@@ -150,8 +151,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_5, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_5
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_5, jacobian
 
     # 6 layer
     W_6 = weight_variable([28*28, 28*28])
@@ -161,12 +162,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_6 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
-        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
+        h_j_6 = tf.scatter_update(h_j_6, h_6_index, 0.2 * tf.ones_like(h_6_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.batch_size, 1, 28*28]) * W_6, jacobian)
     else:
         h_j_6 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
-        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
+        h_j_6 = tf.scatter_update(h_j_6, h_6_index, 0.2 * tf.ones_like(h_6_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.entropy_num, 1, 28*28]) * W_6, jacobian)
 
 
@@ -176,8 +177,8 @@ def deepnn(x, phase_train):
         b_out = bias_variable([10])
 
         y_out = tf.matmul(h_6, W_out) + b_out
-        entropy_all = compute_entropy_with_svd(jacobian)
-        return y_out, entropy_all, h_6
+        entropy_all, s = compute_entropy_with_svd(jacobian)
+        return y_out, entropy_all, h_6, s
 
     # 7 layer
     W_7 = weight_variable([28*28, 28*28])
@@ -187,12 +188,12 @@ def deepnn(x, phase_train):
     if phase_train == True:
         h_j_7 = tf.Variable(tf.ones([FLAGS.batch_size*28*28]))
         h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
-        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
+        h_j_7 = tf.scatter_update(h_j_7, h_7_index, 0.2 * tf.ones_like(h_7_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.batch_size, 1, 28*28]) * W_7, jacobian)
     else:
         h_j_7 = tf.Variable(tf.ones([FLAGS.entropy_num*28*28]))
         h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
-        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
+        h_j_7 = tf.scatter_update(h_j_7, h_7_index, 0.2 * tf.ones_like(h_7_index, tf.float32))
         jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.entropy_num, 1, 28*28]) * W_7, jacobian)
 
 
@@ -201,8 +202,8 @@ def deepnn(x, phase_train):
     b_out = bias_variable([10])
 
     y_out = tf.matmul(h_7, W_out) + b_out
-    entropy_all = compute_entropy_with_svd(jacobian)
-    return y_out, entropy_all, h_7
+    entropy_all, s = compute_entropy_with_svd(jacobian)
+    return y_out, entropy_all, h_7, s
 
 
 def weight_variable(shape):
@@ -236,11 +237,11 @@ def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
-    s_index = len(np.where(s == 0.0)[0])
+    #s_index = len(np.where(s == 0.0)[0])
     s = tf.maximum(tf.abs(s), 0.1 ** 8)
-    log_determine = tf.log(s) + s_index * 8.0 * tf.log(10.0)
+    log_determine = tf.log(s)#+ s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
-    return entropy
+    return entropy, s
 
 
 def plot(samples, layer_samples):
@@ -276,7 +277,7 @@ def main(argv):
     phase_train = tf.placeholder(tf.bool, name='phase_train')
 
     # model
-    y_out, entropy_all, h_last = deepnn(x, phase_train)
+    y_out, entropy_all, h_last, s = deepnn(x, phase_train)
 
     # objective
     cross_entropy = tf.reduce_mean(
@@ -317,11 +318,13 @@ def main(argv):
 
                 batch = mnist.train.next_batch(FLAGS.batch_size)
 
-                _, cross_entropy_curr, train_accuracy = sess.run([
-                    train_step, cross_entropy, accuracy], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
+                _, cross_entropy_curr, train_accuracy, s_curr = sess.run([
+                    train_step, cross_entropy, accuracy, s], feed_dict={x: batch[0], y_: batch[1], phase_train: True})
 
                 train_accuracy_list_batch[_iter][i] = train_accuracy
                 cross_entropy_list[_iter][i] = cross_entropy_curr
+                print np.shape(s_curr)
+                print FLAGS.batch_size
 
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
