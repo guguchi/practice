@@ -7,38 +7,29 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import tensorflow as tf
+from cifar10_data import *
 from tensorflow.examples.tutorials.mnist import input_data
 
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 500000, "学習数")
-tf.app.flags.DEFINE_integer('batch_size', 50, "バッチサイズ")
+tf.app.flags.DEFINE_integer('step', 1000000, "学習数")
+tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
-tf.app.flags.DEFINE_integer('test_batch_size', 100, "テストバッチサイズ")
+tf.app.flags.DEFINE_integer('test_batch_size', 25, "テストバッチサイズ")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_integer('test_example', 10000, "テストデータ数")
-tf.app.flags.DEFINE_string('cifar_data_dir', './../../../data/', "cifar10保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../data/classification/cifar10/layer_change/', "データ保存先")
+tf.app.flags.DEFINE_string('cifar_data_dir', '/home/ishii/Desktop/research/practice/data/', "cifar10保存先")
+tf.app.flags.DEFINE_string('save_data_path', '/home/ishii/Desktop/research/practice/data/classification/cifar10/layer_change/', "データ保存先")
 
 
 def deepnn(x, phase_train):
     # 1 layer
     W_1 = weight_variable([32*32, 32*32])
     b_1 = bias_variable([32*32])
-    h_1 = lrelu(tf.matmul(x, W_1) + b_1)
-
-    if phase_train == True:
-        h_j_1 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
-        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
-        jacobian = tf.reshape(h_j_1, [FLAGS.batch_size, 1, 32*32]) * W_1
-    else:
-        h_j_1 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_1_index = tf.where(tf.reshape(h_1, [-1]) < 0.0)
-        h_j_1 = tf.scatter_update(h_j_1, h_1_index, -0.2 * tf.ones_like(h_1_index, tf.float32))
-        jacobian = tf.reshape(h_j_1, [FLAGS.test_batch_size, 1, 32*32]) * W_1
+    h_1 = tf.nn.sigmoid(tf.matmul(x, W_1) + b_1)
+    jacobian = tf.reshape((1.0 - h_1) * h_1, [tf.shape(h_1)[0], 1, tf.shape(h_1)[1]]) * W_1
 
     if FLAGS.layer_size == 1:
         # output
@@ -52,18 +43,8 @@ def deepnn(x, phase_train):
     # 2 layer
     W_2 = weight_variable([32*32, 32*32])
     b_2 = bias_variable([32*32])
-    h_2 = lrelu(tf.matmul(h_1, W_2) + b_2)
-
-    if phase_train == True:
-        h_j_2 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
-        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.batch_size, 1, 32*32]) * W_2, jacobian)
-    else:
-        h_j_2 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_2_index = tf.where(tf.reshape(h_2, [-1]) < 0.0)
-        h_j_2 = tf.scatter_update(h_j_2, h_2_index, -0.2 * tf.ones_like(h_2_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_2, [FLAGS.test_batch_size, 1, 32*32]) * W_2, jacobian)
+    h_2 = tf.nn.sigmoid(tf.matmul(h_1, W_2) + b_2)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_2) * h_2, [tf.shape(h_2)[0], 1, tf.shape(h_2)[1]]) * W_2, jacobian)
 
     if FLAGS.layer_size == 2:
         # output
@@ -77,18 +58,8 @@ def deepnn(x, phase_train):
     # 3 layer
     W_3 = weight_variable([32*32, 32*32])
     b_3 = bias_variable([32*32])
-    h_3 = lrelu(tf.matmul(h_2, W_3) + b_3)
-
-    if phase_train == True:
-        h_j_3 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
-        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.batch_size, 1, 32*32]) * W_3, jacobian)
-    else:
-        h_j_3 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_3_index = tf.where(tf.reshape(h_3, [-1]) < 0.0)
-        h_j_3 = tf.scatter_update(h_j_3, h_3_index, -0.2 * tf.ones_like(h_3_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_3, [FLAGS.test_batch_size, 1, 32*32]) * W_3, jacobian)
+    h_3 = tf.nn.sigmoid(tf.matmul(h_2, W_3) + b_3)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_3) * h_3, [tf.shape(h_3)[0], 1, tf.shape(h_3)[1]]) * W_3, jacobian)
 
     if FLAGS.layer_size == 3:
         # output
@@ -102,18 +73,8 @@ def deepnn(x, phase_train):
     # 4 layer
     W_4 = weight_variable([32*32, 32*32])
     b_4 = bias_variable([32*32])
-    h_4 = lrelu(tf.matmul(h_3, W_4) + b_4)
-
-    if phase_train == True:
-        h_j_4 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
-        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.batch_size, 1, 32*32]) * W_4, jacobian)
-    else:
-        h_j_4 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_4_index = tf.where(tf.reshape(h_4, [-1]) < 0.0)
-        h_j_4 = tf.scatter_update(h_j_4, h_4_index, -0.2 * tf.ones_like(h_4_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_4, [FLAGS.test_batch_size, 1, 32*32]) * W_4, jacobian)
+    h_4 = tf.nn.sigmoid(tf.matmul(h_3, W_4) + b_4)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_4) * h_4, [tf.shape(h_4)[0], 1, tf.shape(h_4)[1]]) * W_4, jacobian)
 
     if FLAGS.layer_size == 4:
         # output
@@ -127,18 +88,8 @@ def deepnn(x, phase_train):
     # 5 layer
     W_5 = weight_variable([32*32, 32*32])
     b_5 = bias_variable([32*32])
-    h_5 = lrelu(tf.matmul(h_4, W_5) + b_5)
-
-    if phase_train == True:
-        h_j_5 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
-        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.batch_size, 1, 32*32]) * W_5, jacobian)
-    else:
-        h_j_5 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_5_index = tf.where(tf.reshape(h_5, [-1]) < 0.0)
-        h_j_5 = tf.scatter_update(h_j_5, h_5_index, -0.2 * tf.ones_like(h_5_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_5, [FLAGS.test_batch_size, 1, 32*32]) * W_5, jacobian)
+    h_5 = tf.nn.sigmoid(tf.matmul(h_4, W_5) + b_5)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_5) * h_5, [tf.shape(h_5)[0], 1, tf.shape(h_5)[1]]) * W_5, jacobian)
 
     if FLAGS.layer_size == 5:
         # output
@@ -152,18 +103,8 @@ def deepnn(x, phase_train):
     # 6 layer
     W_6 = weight_variable([32*32, 32*32])
     b_6 = bias_variable([32*32])
-    h_6 = lrelu(tf.matmul(h_5, W_6) + b_6)
-
-    if phase_train == True:
-        h_j_6 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
-        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.batch_size, 1, 32*32]) * W_6, jacobian)
-    else:
-        h_j_6 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_6_index = tf.where(tf.reshape(h_6, [-1]) < 0.0)
-        h_j_6 = tf.scatter_update(h_j_6, h_6_index, -0.2 * tf.ones_like(h_6_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_6, [FLAGS.test_batch_size, 1, 32*32]) * W_6, jacobian)
+    h_6 = tf.nn.sigmoid(tf.matmul(h_5, W_6) + b_6)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_6) * h_6, [tf.shape(h_6)[0], 1, tf.shape(h_6)[1]]) * W_6, jacobian)
 
     if FLAGS.layer_size == 6:
         # output
@@ -177,18 +118,8 @@ def deepnn(x, phase_train):
     # 7 layer
     W_7 = weight_variable([32*32, 32*32])
     b_7 = bias_variable([32*32])
-    h_7 = lrelu(tf.matmul(h_6, W_7) + b_7)
-
-    if phase_train == True:
-        h_j_7 = tf.Variable(tf.ones([FLAGS.batch_size*32*32]))
-        h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
-        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.batch_size, 1, 32*32]) * W_7, jacobian)
-    else:
-        h_j_7 = tf.Variable(tf.ones([FLAGS.test_batch_size*32*32]))
-        h_7_index = tf.where(tf.reshape(h_7, [-1]) < 0.0)
-        h_j_7 = tf.scatter_update(h_j_7, h_7_index, -0.2 * tf.ones_like(h_7_index, tf.float32))
-        jacobian = tf.matmul(tf.reshape(h_j_7, [FLAGS.test_batch_size, 1, 32*32]) * W_7, jacobian)
+    h_7 = tf.nn.sigmoid(tf.matmul(h_6, W_7) + b_7)
+    jacobian = tf.matmul(tf.reshape((1.0 - h_7) * h_7, [tf.shape(h_7)[0], 1, tf.shape(h_7)[1]]) * W_7, jacobian)
 
     # output
     W_out = weight_variable([32*32, 10])
@@ -211,10 +142,6 @@ def bias_variable(shape):
     return tf.Variable(initial)
 
 
-def lrelu(x, leak=0.2, name="lrelu"):
-    return tf.maximum(x, leak * x)
-
-
 def svd(A, full_matrices=False, compute_uv=True, name=None):
     _, M, N = A.get_shape().as_list()
     P = min(M, N)
@@ -232,10 +159,9 @@ def compute_entropy_with_svd(jacobian):
     #if self.layer_method == "each":
     s_index = len(np.where(s == 0.0)[0])
     s = tf.maximum(tf.abs(s), 0.1 ** 8)
-    log_determine = tf.log(s) - s_index * 8.0 * tf.log(0.1)
+    log_determine = tf.log(s) + s_index * 8.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
     return entropy
-
 
 def plot(samples, layer_samples):
     fig = plt.figure(figsize=(6, 6))
@@ -299,7 +225,7 @@ def main(argv):
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_train_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
 
-    save_path = FLAGS.save_data_path + 'lrelu_layer_{}_batch_{}_alpha_{}/'.format(
+    save_path = FLAGS.save_data_path + 'sigmoid_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -340,7 +266,7 @@ def main(argv):
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
                     train_entropy = entropy_all.eval(feed_dict={
-                        x: train_images_batch, phase_train: False})
+                        x: _train_images_batch, phase_train: False})
                     entropy_train_list[_iter][i] = train_entropy
 
                     true_test_accuracy = 0.0
@@ -362,13 +288,13 @@ def main(argv):
 
                     entropy_list[_iter][i] = entropy_curr
                     #entropy_curr = 1.0
-                    print('step %d, test accuracy %g, entropy %g' % (i, true_test_accuracy, entropy_curr))
+                    print('step %d, test accuracy %g, entropy %g, train entropy %g' % (i, test_accuracy, entropy_curr, train_entropy))
                     print '---------------------'
 
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
 
-                    layer_samples = sess.run([h_7],
+                    layer_samples = sess.run([h_last],
                                   feed_dict={x: _test_images[:18], phase_train: False})
                     fig = plot(_test_images[:18], layer_samples[0])
                     plt.savefig(save_path+'layer_samples_{}.png'.format(i))

@@ -11,15 +11,15 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
+tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 3, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 500000, "学習数")
+tf.app.flags.DEFINE_integer('step', 1000000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
-tf.app.flags.DEFINE_integer('entropy_num', 100, "entropy")
+tf.app.flags.DEFINE_integer('entropy_num', 25, "entropy")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_cahnge/', "データ保存先")
+tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/layer_change/', "データ保存先")
 
 
 def deepnn(x, phase_train):
