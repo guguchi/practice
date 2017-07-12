@@ -13,8 +13,8 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
-tf.app.flags.DEFINE_integer('iteration', 2, "学習反復回数")
-tf.app.flags.DEFINE_integer('step', 500000, "学習数")
+tf.app.flags.DEFINE_integer('iteration', 1, "学習反復回数")
+tf.app.flags.DEFINE_integer('step', 1000000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
 tf.app.flags.DEFINE_integer('entropy_num', 25, "entropy")
@@ -343,8 +343,8 @@ def main(argv):
     test_accuracy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     with tf.device('/cpu:0'):
-        train_singular_value_list = np.zeros((FLAGS.iteration, int(FLAGS.step / 5000.0) + 1, FLAGS.batch_size, 28*28), dtype=np.float32)
-        test_singular_value_list = np.zeros((FLAGS.iteration, int(FLAGS.step / 5000.0) + 1, FLAGS.entropy_num, 28*28), dtype=np.float32)
+        train_singular_value_list = np.zeros((FLAGS.iteration, 250, FLAGS.batch_size, 28*28), dtype=np.float32)
+        test_singular_value_list = np.zeros((FLAGS.iteration, 250, FLAGS.entropy_num, 28*28), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'lrelu_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -376,8 +376,9 @@ def main(argv):
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
                     singular_value_curr = sess.run([singular_value], feed_dict={
-                        x: batch[0], y_: batch[1], pred: False})
-                    train_singular_value_list[_iter][I] = singular_value_curr
+                        x: batch[0], pred: True})
+                    #print np.shape(singular_value_curr)
+                    train_singular_value_list[_iter][I] = singular_value_curr[0]
 
                     test_accuracy = accuracy.eval(feed_dict={
                         x: mnist.test.images, y_: mnist.test.labels, pred: False})
@@ -385,8 +386,8 @@ def main(argv):
                     test_accuracy_list[_iter][i] = test_accuracy
                     A = np.random.choice(len(mnist.test.images), FLAGS.entropy_num)
                     singular_value_curr = sess.run([singular_value], feed_dict={
-                        x: mnist.test.images[A], y_: mnist.test.labels[A], pred: False})
-                    test_singular_value_list[_iter][I] = singular_value_curr
+                        x: mnist.test.images[A], pred: False})
+                    test_singular_value_list[_iter][I] = singular_value_curr[0]
 
                     print('step %d, test accuracy %g, ' % (i, test_accuracy))
                     print '---------------------'
