@@ -286,9 +286,9 @@ def compute_entropy_with_svd(jacobian):
     with tf.device('/cpu:0'):
         s = svd(jacobian, compute_uv=False)
     #if self.layer_method == "each":
-    #s_index = len(np.where(s == 0.0)[0])
-    _s = tf.abs(s)#tf.maximum(tf.abs(s), 0.1 ** 18)
-    log_determine = tf.log(_s)#+ s_index * 8.0 * tf.log(10.0)
+    _s = tf.maximum(tf.abs(s), 0.1 ** 3)
+    s_index = tf.cast(tf.shape(tf.where(_s == 0.1 ** 3)[0])[0], tf.float32)
+    log_determine = tf.log(_s)+ s_index * 3.0 * tf.log(10.0)
     entropy = tf.reduce_mean(log_determine)
     return entropy, _s
 
@@ -350,6 +350,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     entropy_train_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
+    singular_value_list = np.zeros((FLAGS.iteration, FLAGS.step / 5000, FLAGS.batch_size, 28*28), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'lrelu_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -362,6 +363,7 @@ def main(argv):
              )
     )
 
+    I = 0
     for _iter in range(FLAGS.iteration):
         print '=== iteration {} ==='.format(_iter)
 
@@ -379,9 +381,10 @@ def main(argv):
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
-                    train_entropy, train_sv_min = sess.run([entropy_all, tf.reduce_min(singular_value)], feed_dict={
+                    train_entropy, singular_value_curr = sess.run([entropy_all, singular_value], feed_dict={
                         x: batch[0], y_: batch[1], pred: False})
                     entropy_train_list[_iter][i] = train_entropy
+                    singular_value_list[_iter][I] = singular_value_curr
 
                     test_accuracy = accuracy.eval(feed_dict={
                         x: mnist.test.images, y_: mnist.test.labels, pred: False})
@@ -392,9 +395,13 @@ def main(argv):
                         x: mnist.test.images[A], y_: mnist.test.labels[A], pred: False})
                     entropy_list[_iter][i] = entropy_curr
 
-                    print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g' % (
-                        i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min))
+                    singular_value_curr[singular_value_curr == 0.1 ** 3] = 10000.0
+                    print np.min(singular_value_curr)
+
+                    #print('step %d, test accuracy %g, test entropy %g, test sv min %g, train entropy %g, train sv min %g, train sv max %g' % (
+                    #    i, test_accuracy, entropy_curr, sv_min, train_entropy, train_sv_min, train_sv_max))
                     print '---------------------'
+                    I = I + 1
                 """
                 if _iter == 0 and (i % 5000 == 0 or i == FLAGS.step - 1):
                     samples = mnist.test.images[:18]
