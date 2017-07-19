@@ -7,21 +7,21 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import tensorflow as tf
-#from tensorflow.python.ops import tf
+from cifar10_data import *
 from tensorflow.examples.tutorials.mnist import input_data
 
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_float('learning_rate', 0.01, "学習率")
+tf.app.flags.DEFINE_float('learning_rate', 0.0005, "学習率")
 tf.app.flags.DEFINE_integer('iteration', 1, "学習反復回数")
 tf.app.flags.DEFINE_integer('step', 1000000, "学習数")
 tf.app.flags.DEFINE_integer('batch_size', 25, "バッチサイズ")
 tf.app.flags.DEFINE_integer('layer_size', 5, "レイヤー数")
-tf.app.flags.DEFINE_integer('test_batch_size', 25, "テストバッチサイズ")
+tf.app.flags.DEFINE_integer('test_batch_size', 1000, "テストバッチサイズ")
 tf.app.flags.DEFINE_float('gpu_memory', 0.1, "gpuメモリ使用割合")
 tf.app.flags.DEFINE_integer('test_example', 10000, "テストデータ数")
-tf.app.flags.DEFINE_string('data_dir', './../../../../data/mnist/', "mnist保存先")
-tf.app.flags.DEFINE_string('save_data_path', './../../../../data/classification/mnist/batch_change/', "データ保存先")
+tf.app.flags.DEFINE_string('cifar_data_dir', '/home/ishii/Desktop/research/practice/data/', "cifar10保存先")
+tf.app.flags.DEFINE_string('save_data_path', '/home/ishii/Desktop/research/practice/data/classification/cifar10/batch_change/', "データ保存先")
 
 
 def deepnn(x, pred):
@@ -322,6 +322,8 @@ def main(argv):
                                               FLAGS.batch_size)
     test_images, test_labels = test_input(FLAGS.cifar_data_dir + 'cifar-10-batches-bin/',
                                           FLAGS.test_batch_size)
+    test_images_ent, test_labels_ent = test_input(FLAGS.cifar_data_dir + 'cifar-10-batches-bin/',
+                                          FLAGS.batch_size)
 
     # placeholder
     x = tf.placeholder(tf.float32, [None, 32*32])
@@ -352,7 +354,7 @@ def main(argv):
     cross_entropy_list = np.zeros((FLAGS.iteration, FLAGS.step), dtype=np.float32)
     with tf.device('/cpu:0'):
         train_singular_value_list = np.zeros((FLAGS.iteration, 250, FLAGS.batch_size, 32*32), dtype=np.float32)
-        test_singular_value_list = np.zeros((FLAGS.iteration, 250, FLAGS.test_batch_size, 32*32), dtype=np.float32)
+        test_singular_value_list = np.zeros((FLAGS.iteration, 250, FLAGS.batch_size, 32*32), dtype=np.float32)
 
     save_path = FLAGS.save_data_path + 'lrelu_layer_{}_batch_{}_alpha_{}/'.format(
         FLAGS.layer_size, FLAGS.batch_size, FLAGS.learning_rate)
@@ -364,11 +366,16 @@ def main(argv):
              per_process_gpu_memory_fraction=FLAGS.gpu_memory # 最大値の50%まで
              )
     )
+    config_cpu = tf.ConfigProto(
+        device_count = {'GPU': 0}
+    )
 
     sess_train_example_batch = tf.Session(config=config_cpu)
     tf.train.start_queue_runners(sess=sess_train_example_batch)
     sess_test_example = tf.Session(config=config_cpu)
     tf.train.start_queue_runners(sess=sess_test_example)
+    sess_test_example_ent = tf.Session(config=config_cpu)
+    tf.train.start_queue_runners(sess=sess_test_example_ent)
 
     I = 0
     for _iter in range(FLAGS.iteration):
@@ -384,9 +391,9 @@ def main(argv):
 
                 _, cross_entropy_curr, train_accuracy_batch = sess.run(
                     [train_step, cross_entropy, accuracy],
-                    feed_dict={x: _train_images_batch, y_: _trains_labels_batch, phase_train: True})
+                    feed_dict={x: _train_images_batch, y_: _trains_labels_batch, pred: True})
 
-                train_accuracy_list_batch[_iter][i] = train_accuracy
+                train_accuracy_list_batch[_iter][i] = train_accuracy_batch
                 cross_entropy_list[_iter][i] = cross_entropy_curr
 
                 if i % 5000 == 0 or i == FLAGS.step - 1:
@@ -401,14 +408,16 @@ def main(argv):
                         _test_images, _test_labels = sess_test_example.run([test_images, test_labels])
 
                         test_accuracy = accuracy.eval(feed_dict={
-                            x: _test_images, y_: _test_labels, phase_train: False})
+                            x: _test_images, y_: _test_labels, pred: False})
                         true_test_accuracy += test_accuracy
                         _step += 1
                     true_test_accuracy = true_test_accuracy / num_iter
                     test_accuracy_list[_iter][i] = true_test_accuracy
 
+                    _test_images_ent, _test_labels_ent = sess_test_example_ent.run([test_images_ent, test_labels_ent])
+
                     singular_value_curr = sess.run([singular_value], feed_dict={
-                        x: _test_images, pred: False})
+                        x: _test_images_ent, pred: True})
                     test_singular_value_list[_iter][I] = singular_value_curr[0]
 
                     print('step %d, test accuracy %g, ' % (i, test_accuracy))
