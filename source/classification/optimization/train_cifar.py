@@ -15,7 +15,7 @@ from chainer.datasets import get_cifar100
 import models.VGG
 
 from six.moves import xrange
-import os, cupy, collections, six, math
+import os, collections, six, math
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -36,9 +36,9 @@ def compute_classification_accuracy(model, x, t):
 def cache_weights(model):
     cached_weights = []
     for param in model.params():
-        with cuda.get_device(param.data):
-            xp = cuda.get_array_module(param.data)
-            cached_weights.append(xp.copy(param.data))
+		with cuda.get_device(param.data):
+			xp = cuda.get_array_module(param.data)
+			cached_weights.append(xp.copy(param.data))
     return cached_weights
 
 
@@ -89,9 +89,6 @@ def main():
     print('# epoch: {}'.format(args.epoch))
     print('')
 
-    # Set up a neural network to train.
-    # Classifier reports softmax cross entropy loss and accuracy at every
-    # iteration, which will be used by the PrintReport extension below.
     if args.dataset == 'cifar10':
         print('Using CIFAR10 dataset.')
         class_labels = 10
@@ -104,7 +101,6 @@ def main():
         raise RuntimeError('Invalid dataset choice.')
     model = models.VGG.VGG16(class_labels)
     if args.gpu >= 0:
-        # Make a specified GPU current
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
 
@@ -124,14 +120,14 @@ def main():
     train_loop = len(train_data) // args.minibatchsize
     train_indices = np.arange(len(train_data))
 
-    # training cycle
     for epoch in xrange(1, args.epoch):
         np.random.shuffle(train_indices)
         sum_loss = 0
+
         with chainer.using_config("train", True):
-            # loop over all batches
+
             for itr in xrange(1, train_loop + 1):
-                # sample minibatch
+
                 batch_range = np.arange(itr * args.batchsize, min((itr + 1) * args.batchsize, len(train_data)))
                 x = train_data[train_indices[batch_range]]
                 t = train_label[train_indices[batch_range]]
@@ -153,13 +149,9 @@ def main():
                     x_valid = x[valid_indices]
                     t_valid = t[valid_indices]
 
-					print np.shape(x_train)
-
-
                     logits = model(x_train)
                     loss = F.softmax_cross_entropy(logits, Variable(t_train))
 
-                    # update weights
                     optimizer.update(lossfun=lambda: loss)
 
                     accuracy_valid = compute_classification_accuracy(model, x_valid, t_valid)
