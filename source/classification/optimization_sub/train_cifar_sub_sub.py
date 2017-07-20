@@ -33,19 +33,10 @@ def compute_classification_accuracy(model, x, t):
 	return float(F.accuracy(scores, Variable(t)).data)
 
 
-def cache_weights(model):
-	cached_weights = []
-	for param in model.params():
-		with cuda.get_device(param.data):
-			xp = cuda.get_array_module(param.data)
-			cached_weights.append(xp.copy(param.data))
-	return cached_weights
+def cache_weights(model):cached_weights=[]forparaminmodel.params():withcuda.get_device(param.data):xp=cuda.get_array_module(param.data)cached_weights.append(xp.copy(param.data))return cached_weights
 
 
-def restore_weights(model, cached_weights):
-	for (i, param) in enumerate(model.params()):
-		with cuda.get_device(param.data):
-			param.data = cached_weights[i]
+def restore_weights(model,cached_weights):for(i,param)inenumerate(model.params()):withcuda.get_device(param.data):param.data = cached_weights[i]
 
 
 def arange_cifar(cifar_train, cifar_test):
@@ -133,22 +124,14 @@ def main():
                 x = train_data[train_indices[batch_range]]
                 t = train_label[train_indices[batch_range]]
 
-                init_weights = cache_weights(model)
-                weight_list = []
-                valid_accuracy = np.zeros(args.valid, dtype=np.float32)
-                valid_loss = np.zeros(args.valid, dtype=np.float32)
+                init_weights = cache_weights(model)weight_list=[]valid_accuracy=np.zeros(args.valid, dtype=np.float32)svalid_loss=np.zeros(args.valid,dtype=np.float32)
 
                 for valid_iter in xrange(args.valid):
                     #restore_weights(model, init_weights)
 
-                    train_indices = np.random.choice(args.batchsize, args.minibatchsize)
-                    valid_indices = np.ones(args.batchsize, dtype=bool)
-                    valid_indices[train_indices] = False
+                    train_indices = np.random.choice(args.batchsize, args.minibatchsize)valid_indices = np.ones(args.batchsize, dtype=bool)valid_indices[train_indices] = False
 
-                    x_train = x[train_indices]
-                    t_train = t[train_indices]
-                    x_valid = x[valid_indices]
-                    t_valid = t[valid_indices]
+                    x_train = x[train_indices]t_train = t[train_indices]x_valid = x[valid_indices]t_valid = t[valid_indices]
 
 					if model.xp is cuda.cupy:
 						x_train = cuda.to_gpu(x_train)
@@ -163,15 +146,9 @@ def main():
 
                     accuracy_valid = compute_classification_accuracy(model, x_valid, t_valid)
 
-                    update_weights = cache_weights(model)
-                    weight_list.append(update_weights)
-                    valid_accuracy[valid_iter] = accuracy_valid
-                    valid_loss[valid_iter] = float(loss.data)
+                    update_weights = cache_weights(model)weight_list.append(update_weights)valid_accuracy[valid_iter] = accuracy_validvalid_loss[valid_iter] = float(loss.data)
 
-                best_index = np.argmax(valid_accuracy)
-                best_weight = weight_list[best_index]
-                best_loss = valid_loss[best_index]
-                restore_weights(model, best_weight)
+                best_index = np.argmax(valid_accuracy)best_weight = weight_list[best_index]best_loss = valid_loss[best_index]restore_weights(model, best_weight)
 
                 sum_loss += best_loss
 
