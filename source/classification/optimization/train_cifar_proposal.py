@@ -91,6 +91,9 @@ def main():
     train_count = len(train)
     test_count = len(test)
 
+    print(train_count)
+    print(test_count)
+
     model = L.Classifier(models.VGG.VGG(class_labels))
     if args.gpu >= 0:
         chainer.cuda.get_device(args.gpu).use()  # Make a specified GPU current
@@ -170,7 +173,7 @@ def main():
 
         iteration += 1
 
-        if train_iter.epoch % (2 * thresh) == 0 and train_iter.is_new_epoch:
+        if train_iter.epoch % (1 * thresh) == 0 and train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
                 sum_loss / train_count, sum_accuracy / train_count))

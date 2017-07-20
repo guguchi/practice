@@ -98,7 +98,7 @@ def main():
         sum_loss += float(model.loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-        if train_iter.epoch % 2 == 0 and train_iter.is_new_epoch:
+        if train_iter.epoch % 1 == 0 and train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
                 sum_loss / train_count, sum_accuracy / train_count))
