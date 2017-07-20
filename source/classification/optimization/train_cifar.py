@@ -15,7 +15,7 @@ from chainer.datasets import get_cifar100
 import models.VGG
 
 from six.moves import xrange
-import os, collections, six, math
+import os, collections, six, math, cupy
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -34,12 +34,12 @@ def compute_classification_accuracy(model, x, t):
 
 
 def cache_weights(model):
-    cached_weights = []
-    for param in model.params():
+	cached_weights = []
+	for param in model.params():
 		with cuda.get_device(param.data):
 			xp = cuda.get_array_module(param.data)
 			cached_weights.append(xp.copy(param.data))
-    return cached_weights
+	return cached_weights
 
 
 def restore_weights(model, cached_weights):
@@ -89,20 +89,21 @@ def main():
     print('# epoch: {}'.format(args.epoch))
     print('')
 
-    if args.dataset == 'cifar10':
-        print('Using CIFAR10 dataset.')
-        class_labels = 10
-        cifar_train, cifar_test = get_cifar10()
-    elif args.dataset == 'cifar100':
-        print('Using CIFAR100 dataset.')
-        class_labels = 100
-        cifar_train, cifar_test = get_cifar100()
-    else:
-        raise RuntimeError('Invalid dataset choice.')
-    model = models.VGG.VGG16(class_labels)
+	if args.dataset == 'cifar10':
+		print('Using CIFAR10 dataset.')
+		class_labels = 10
+		cifar_train, cifar_test = get_cifar10()
+	elif args.dataset == 'cifar100':
+		print('Using CIFAR100 dataset.')
+		class_labels = 100
+		cifar_train, cifar_test = get_cifar100()
+	else:
+		raise RuntimeError('Invalid dataset choice.')
+
+	model = models.VGG.VGG16(class_labels)
     if args.gpu >= 0:
-        chainer.cuda.get_device_from_id(args.gpu).use()
-        model.to_gpu()
+		chainer.cuda.get_device_from_id(args.gpu).use()
+		model.to_gpu()
 
     optimizer = chainer.optimizers.MomentumSGD(args.learnrate)
     optimizer.setup(model)
@@ -138,7 +139,7 @@ def main():
                 valid_loss = np.zeros(args.valid, dtype=np.float32)
 
                 for valid_iter in xrange(args.valid):
-                    restore_weights(model, init_weights)
+                    #restore_weights(model, init_weights)
 
                     train_indices = np.random.choice(args.batchsize, args.minibatchsize)
                     valid_indices = np.ones(args.batchsize, dtype=bool)
@@ -148,6 +149,12 @@ def main():
                     t_train = t[train_indices]
                     x_valid = x[valid_indices]
                     t_valid = t[valid_indices]
+
+					if model.xp is cuda.cupy:
+						x_train = cuda.to_gpu(x_train)
+						t_train = cuda.to_gpu(t_train)
+						x_valid = cuda.to_gpu(x_valid)
+						t_valid = cuda.to_gpu(t_valid)
 
                     logits = model(x_train)
                     loss = F.softmax_cross_entropy(logits, Variable(t_train))
@@ -174,16 +181,6 @@ def main():
 
         sys.stdout.write("\r\033[2KEpoch {} - loss: {:.8f} - acc: {:.5f} (train), {:.5f} (test)\n".format(epoch, sum_loss / train_loop, accuracy_train, accuracy_test))
         sys.stdout.flush()
-
-
-# to gpu
-"""
-if model.xp is cuda.cupy:
-	x_train = cuda.to_gpu(x_train)
-	t_train = cuda.to_gpu(t_train)
-	x_valid = cuda.to_gpu(x_valid)
-	t_valid = cuda.to_gpu(t_valid)
-"""
 
 
 if __name__ == '__main__':
