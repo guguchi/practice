@@ -22,7 +22,6 @@ from chainer.datasets import get_cifar10
 from chainer.datasets import get_cifar100
 
 import models.VGG
-#from chainer.links import VGG16Layers
 
 
 def cache_weights(model):
@@ -109,12 +108,12 @@ def main():
     sum_loss = 0
     iteration = 0
 
-    L = (float(args.batchsize) / args.minibatchsize)
+    thresh = int(float(args.batchsize) / args.minibatchsize)
 
-    while int(train_iter.epoch / L) < args.epoch:
+    while train_iter.epoch < args.epoch * thresh:
         batch = train_iter.next()
         # Reduce learning rate by 0.5 every 25 epochs.
-        if int(train_iter.epoch / L) % 25 == 0 and train_iter.is_new_epoch:
+        if int(train_iter.epoch / thresh) % (25 * thresh) == 0 and train_iter.is_new_epoch:
             optimizer.lr *= 0.5
             print('Reducing learning rate to: ', optimizer.lr)
 
@@ -134,7 +133,6 @@ def main():
             valid_loss = np.zeros(args.valid, dtype=np.float32)
 
             for valid_iter in xrange(args.valid):
-                print('valid', valid_iter)
                 restore_weights(model, init_weights)
 
                 train_indices = np.random.choice(args.batchsize, args.minibatchsize)
@@ -166,14 +164,13 @@ def main():
             best_loss = valid_loss[best_index]
             best_accuracy = valid_accuracy[best_index]
             restore_weights(model, best_weight)
-            print(valid_accuracy)
 
             sum_loss += best_loss * len(t.data)
             sum_accuracy += best_accuracy * len(t.data)
 
         iteration += 1
 
-        if int(train_iter.epoch / L) % 2 == 0 and train_iter.is_new_epoch:
+        if train_iter.epoch % (2 * thresh) == 0 and train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
                 sum_loss / train_count, sum_accuracy / train_count))

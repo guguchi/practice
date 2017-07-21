@@ -85,7 +85,6 @@ def main():
     sum_loss = 0
 
     while train_iter.epoch < args.epoch:
-        print(train_iter.epoch)
         batch = train_iter.next()
         # Reduce learning rate by 0.5 every 25 epochs.
         if train_iter.epoch % 25 == 0 and train_iter.is_new_epoch:
@@ -99,7 +98,7 @@ def main():
         sum_loss += float(model.loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-        if train_iter.epoch % 2 == 0 andtrain_iter.is_new_epoch:
+        if train_iter.epoch % 2 == 0 and train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
                 sum_loss / train_count, sum_accuracy / train_count))
