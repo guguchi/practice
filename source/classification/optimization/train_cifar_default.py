@@ -8,6 +8,7 @@ applies an optimizer to update the model.
 """
 from __future__ import print_function
 import argparse
+import os
 
 import numpy as np
 
@@ -28,12 +29,14 @@ def main():
                         help='The dataset to use: cifar10 or cifar100')
     parser.add_argument('--batchsize', '-b', type=int, default=16,
                         help='Number of images in each mini-batch')
-    parser.add_argument('--learnrate', '-l', type=float, default=0.05,
+    parser.add_argument('--learnrate', '-l', type=float, default=0.01,
                         help='Learning rate for SGD')
     parser.add_argument('--epoch', '-e', type=int, default=300,
                         help='Number of sweeps over the dataset to train')
     parser.add_argument('--gpu', '-g', type=int, default=0,
                         help='GPU ID (negative value indicates CPU)')
+    parser.add_argument('--decay', '-dy', type=int, default=1,
+                        help='learnrate decay')
     parser.add_argument('--out', '-o', default='result',
                         help='Directory to output the result')
     parser.add_argument('--test', action='store_true',
@@ -41,6 +44,10 @@ def main():
     parser.add_argument('--resume', '-r', default='',
                         help='Resume the training from snapshot')
     args = parser.parse_args()
+
+    save_path = './result_default/'
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     print('GPU: {}'.format(args.gpu))
     print('# Minibatch-size: {}'.format(args.batchsize))
@@ -84,12 +91,16 @@ def main():
     sum_accuracy = 0
     sum_loss = 0
 
+    train_accuracy_list = np.zeros(args.epoch, dtype=np.float32)
+    test_accuracy_list = np.zeros(args.epoch, dtype=np.float32)
+
     while train_iter.epoch < args.epoch:
         batch = train_iter.next()
         # Reduce learning rate by 0.5 every 25 epochs.
-        if train_iter.epoch % 25 == 0 and train_iter.is_new_epoch:
-            optimizer.lr *= 0.5
-            print('Reducing learning rate to: ', optimizer.lr)
+        if args.decay == 1:
+            if train_iter.epoch % 25 == 0 and train_iter.is_new_epoch:
+                optimizer.lr *= 0.5
+                print('Reducing learning rate to: ', optimizer.lr)
 
         x_array, t_array = convert.concat_examples(batch, args.gpu)
         x = chainer.Variable(x_array)
@@ -98,10 +109,13 @@ def main():
         sum_loss += float(model.loss.data) * len(t.data)
         sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-        if train_iter.epoch % 1 == 0 and train_iter.is_new_epoch:
+        if train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
                 sum_loss / train_count, sum_accuracy / train_count))
+
+            train_accuracy_list[train_iter.epoch] = sum_accuracy / train_count
+
             # evaluation
             sum_accuracy = 0
             sum_loss = 0
@@ -118,14 +132,15 @@ def main():
             model.predictor.train = True
             print('test mean  loss: {}, accuracy: {}'.format(
                 sum_loss / test_count, sum_accuracy / test_count))
+
+            test_accuracy_list[train_iter.epoch] = sum_accuracy / test_count
+
             sum_accuracy = 0
             sum_loss = 0
 
     # Save the model and the optimizer
-    print('save the model')
-    serializers.save_npz('mlp.model', model)
-    print('save the optimizer')
-    serializers.save_npz('mlp.state', optimizer)
+    np.save(save_path + 'train_accyracy_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), train_accuracy_list)
+    np.save(save_path + 'test_accyracy_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), test_accuracy_list)
 
 
 if __name__ == '__main__':
