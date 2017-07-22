@@ -21,6 +21,8 @@ from chainer import serializers, cuda
 from chainer.datasets import get_cifar10
 from chainer.datasets import get_cifar100
 
+import cupy as cp
+
 import models.VGG
 
 
@@ -47,9 +49,9 @@ def main():
                         help='The dataset to use: cifar10 or cifar100')
     parser.add_argument('--batchsize', '-b', type=int, default=16,
                         help='Number of images in each mini-batch')
-    parser.add_argument('--cumm_num', '-c', type=int, default=4,
+    parser.add_argument('--cumm_num', '-c', type=int, default=10,
                         help='Number of validation in each mini-batch')
-    parser.add_argument('--valid', '-v', type=int, default=5,
+    parser.add_argument('--valid', '-v', type=int, default=8,
                         help='Number of validation in each mini-batch')
     parser.add_argument('--learnrate', '-l', type=float, default=0.01,
                         help='Learning rate for SGD')
@@ -115,9 +117,7 @@ def main():
     sum_accuracy = 0
     sum_loss = 0
     iteration = 0
-    temp = 100.0
-
-    thresh = int(float(args.batchsize) / args.minibatchsize)
+    temp = 10.0
 
     train_accuracy_list = np.zeros(args.epoch, dtype=np.float32)
     test_accuracy_list = np.zeros(args.epoch, dtype=np.float32)
@@ -126,20 +126,20 @@ def main():
         batch = train_iter.next()
         x_array, t_array = convert.concat_examples(batch, args.gpu)
 
-        if train_iter.epoch == 0:
+        if iteration == 0:
             x = chainer.Variable(x_array)
             t = chainer.Variable(t_array)
             optimizer.update(model, x, t)
             #sum_loss += float(model.loss.data) * len(t.data)
             #sum_accuracy += float(model.accuracy.data) * len(t.data)
 
-        elif train_iter.epoch == 1:
+        elif iteration == 1:
             cumm_batch_x = x_array
             cumm_batch_t = t_array
 
-        elif train_iter.epoch < args.cumm_num:
-            cumm_batch_x = np.vstack((cumm_batch_x, x_array))
-            cumm_batch_t = np.hstack((cumm_batch_t, t_array))
+        elif iteration < args.cumm_num:
+            cumm_batch_x = cp.vstack((cumm_batch_x, x_array))#chainer.functions.concat([cumm_batch_x, x_array], axis=0)
+            cumm_batch_t = cp.hstack((cumm_batch_t, t_array))#chainer.functions.concat([cumm_batch_t, t_array], axis=0)
 
         else:
             # Reduce learning rate by 0.5 every 25 epochs.
@@ -148,8 +148,8 @@ def main():
                     optimizer.lr *= 0.5
                     print('Reducing learning rate to: ', optimizer.lr)
 
-            cumm_batch_x = np.vstack((cumm_batch_x, x_array))
-            cumm_batch_t = np.hstack((cumm_batch_t, t_array))
+            cumm_batch_x = cp.vstack((cumm_batch_x, x_array))#chainer.functions.concat([cumm_batch_x, x_array], axis=0)
+            cumm_batch_t = cp.hstack((cumm_batch_t, t_array))#chainer.functions.concat([cumm_batch_t, t_array], axis=0)
 
             init_weights = cache_weights(model)
             weight_list = []
@@ -160,7 +160,7 @@ def main():
             for valid_iter in xrange(args.valid):
                 restore_weights(model, init_weights)
 
-                train_indices = np.random.choice(args.batchsize * args.cumm_num, args.batchsize)
+                train_indices = np.random.choice(args.batchsize * args.cumm_num, args.batchsize, replace=False)
                 valid_indices = np.ones(args.batchsize * args.cumm_num, dtype=bool)
                 valid_indices[train_indices] = False
 
@@ -175,9 +175,9 @@ def main():
 
                 update_weights = cache_weights(model)
 
-                x = chainer.Variable(x_valid)
-                t = chainer.Variable(t_valid)
-                loss = model(x, t)
+                x_vld = chainer.Variable(x_valid)
+                t_vld = chainer.Variable(t_valid)
+                loss = model(x_vld, t_vld)
                 accuracy_valid = float(model.accuracy.data)
 
                 weight_list.append(update_weights)
@@ -196,6 +196,7 @@ def main():
                 cumm_indices = np.ones(args.batchsize * args.cumm_num, dtype=bool)
                 cumm_indices[best_indices] = False
                 cumm_batch_x = cumm_batch_x[cumm_indices]
+                cumm_batch_t = cumm_batch_t[cumm_indices]
 
             if args.select_mode == 1:
                 select_index = np.random.choice(args.valid, p = np.exp(temp * valid_accuracy) / np.sum(np.exp(temp * valid_accuracy)))
@@ -208,24 +209,22 @@ def main():
                 cumm_indices = np.ones(args.batchsize * args.cumm_num, dtype=bool)
                 cumm_indices[select_indices] = False
                 cumm_batch_x = cumm_batch_x[cumm_indices]
+                cumm_batch_t = cumm_batch_t[cumm_indices]
 
             if train_iter.is_new_epoch:
-                temp *= 0.9
+                temp *= 0.25
                 print('Reducing temp to: ', temp)
-
 
             sum_loss += curr_loss * len(t.data)
             sum_accuracy += curr_accuracy * len(t.data)
 
-            iteration += 1
-
             if train_iter.is_new_epoch:
                 print('epoch: ', train_iter.epoch)
                 print('train mean loss: {}, accuracy: {}'.format(
-                    sum_loss / (train_count - args.batchsize * args.cumm_num),
-                    sum_accuracy / (train_count - args.batchsize * args.cumm_num)))
+                    sum_loss / (train_count),
+                    sum_accuracy / (train_count)))
 
-                train_accuracy_list[train_iter.epoch] = sum_accuracy / (train_count - args.batchsize * args.cumm_num)
+                train_accuracy_list[train_iter.epoch] = sum_accuracy / (train_count)
 
                 # evaluation
                 sum_accuracy = 0
@@ -249,9 +248,11 @@ def main():
                 sum_accuracy = 0
                 sum_loss = 0
 
+        iteration += 1
+
     # Save the model and the optimizer
-    np.save(save_path + 'train_accyracy_2_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), train_accuracy_list)
-    np.save(save_path + 'test_accyracy_2_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), test_accuracy_list)
+    np.save(save_path + 'train_accyracy_0975_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), train_accuracy_list)
+    np.save(save_path + 'test_accyracy_0975_lr_{}_decay_{}.npy'.format(args.learnrate, args.decay), test_accuracy_list)
 
 
 if __name__ == '__main__':

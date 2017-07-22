@@ -45,11 +45,11 @@ def main():
     parser = argparse.ArgumentParser(description='Chainer CIFAR example:')
     parser.add_argument('--dataset', '-d', default='cifar10',
                         help='The dataset to use: cifar10 or cifar100')
-    parser.add_argument('--batchsize', '-b', type=int, default=64,
+    parser.add_argument('--batchsize', '-b', type=int, default=128,
                         help='Number of images in each mini-batch')
-    parser.add_argument('--minibatchsize', '-mb', type=int, default=16,
+    parser.add_argument('--minibatchsize', '-mb', type=int, default=32,
                         help='Number of images in each mini-mini-batch')
-    parser.add_argument('--valid', '-v', type=int, default=5,
+    parser.add_argument('--valid', '-v', type=int, default=10,
                         help='Number of validation in each mini-batch')
     parser.add_argument('--learnrate', '-l', type=float, default=0.01,
                         help='Learning rate for SGD')
@@ -69,7 +69,7 @@ def main():
                         help='Resume the training from snapshot')
     args = parser.parse_args()
 
-    save_path = './result_proposal/'
+    save_path = './result_proposal_2/'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -115,7 +115,7 @@ def main():
     sum_accuracy = 0
     sum_loss = 0
     iteration = 0
-    temp = 100.0
+    temp = 10.0
 
     thresh = int(float(args.batchsize) / args.minibatchsize)
 
@@ -148,7 +148,7 @@ def main():
             for valid_iter in xrange(args.valid):
                 restore_weights(model, init_weights)
 
-                train_indices = np.random.choice(args.batchsize, args.minibatchsize)
+                train_indices = np.random.choice(args.batchsize, args.minibatchsize, replace=False)
                 valid_indices = np.ones(args.batchsize, dtype=bool)
                 valid_indices[train_indices] = False
 
@@ -163,9 +163,9 @@ def main():
 
                 update_weights = cache_weights(model)
 
-                x = chainer.Variable(x_valid)
-                t = chainer.Variable(t_valid)
-                loss = model(x, t)
+                x_vld = chainer.Variable(x_valid)
+                t_vld = chainer.Variable(t_valid)
+                loss = model(x_vld, t_vld)
                 accuracy_valid = float(model.accuracy.data)
 
                 weight_list.append(update_weights)
@@ -187,7 +187,7 @@ def main():
                 restore_weights(model, select_weight)
 
             if train_iter.is_new_epoch:
-                temp *= 0.9
+                temp *= 0.99
                 print('Reducing temp to: ', temp)
 
 
@@ -199,9 +199,9 @@ def main():
         if train_iter.is_new_epoch:
             print('epoch: ', train_iter.epoch)
             print('train mean loss: {}, accuracy: {}'.format(
-                sum_loss / train_count, sum_accuracy / train_count))
+                4.0 * sum_loss / train_count, 4.0 * sum_accuracy / train_count))
 
-            train_accuracy_list[train_iter.epoch] = sum_accuracy / train_count
+            train_accuracy_list[train_iter.epoch] = 4.0 * sum_accuracy / train_count
 
             # evaluation
             sum_accuracy = 0
